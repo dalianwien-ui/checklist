@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-21T14:26:57.239Z",
+  "updatedAt": "2026-11-21T14:42:46.909Z",
   "categories": [
     {
       "id": "cat_food",
@@ -19,7 +19,7 @@
         {
           "id": "item_3",
           "text": "冷面",
-          "completed": false
+          "completed": true
         },
         {
           "id": "item_4",
