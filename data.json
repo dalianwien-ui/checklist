@@ -1,0 +1,200 @@
+{
+  "updatedAt": "2026-11-21T13:50:08.210Z",
+  "categories": [
+    {
+      "id": "cat_food",
+      "title": "吃的",
+      "column": "left",
+      "items": [
+        {
+          "id": "item_1",
+          "text": "米线酱",
+          "completed": false
+        },
+        {
+          "id": "item_2",
+          "text": "土豆粉村驴",
+          "completed": false
+        },
+        {
+          "id": "item_3",
+          "text": "冷面",
+          "completed": false
+        },
+        {
+          "id": "item_4",
+          "text": "山姆黑芝麻糊",
+          "completed": false
+        },
+        {
+          "id": "item_5",
+          "text": "山姆苹果干",
+          "completed": false
+        },
+        {
+          "id": "item_6",
+          "text": "豆干",
+          "completed": false
+        },
+        {
+          "id": "item_7",
+          "text": "金针菇",
+          "completed": false
+        },
+        {
+          "id": "item_8",
+          "text": "海带丝",
+          "completed": false
+        },
+        {
+          "id": "item_9",
+          "text": "小老板海苔",
+          "completed": false
+        },
+        {
+          "id": "item_10",
+          "text": "波力海苔",
+          "completed": false
+        },
+        {
+          "id": "item_11",
+          "text": "果滋果心软糖",
+          "completed": false
+        },
+        {
+          "id": "item_12",
+          "text": "桃胶",
+          "completed": false
+        },
+        {
+          "id": "item_13",
+          "text": "雪燕",
+          "completed": false
+        },
+        {
+          "id": "item_14",
+          "text": "木薯珍珠",
+          "completed": false
+        },
+        {
+          "id": "item_15",
+          "text": "黑糖",
+          "completed": false
+        }
+      ]
+    },
+    {
+      "id": "cat_stickers",
+      "title": "文具 · 贴纸",
+      "column": "right",
+      "items": [
+        {
+          "id": "item_16",
+          "text": "装饰电脑贴纸",
+          "completed": false
+        },
+        {
+          "id": "item_17",
+          "text": "活页纸的孔孔拯救贴纸",
+          "completed": false
+        },
+        {
+          "id": "item_18",
+          "text": "少许姓名贴",
+          "completed": false
+        },
+        {
+          "id": "item_19",
+          "text": "透明胶带",
+          "completed": false
+        }
+      ]
+    },
+    {
+      "id": "cat_pencilcase",
+      "title": "文具 · 笔袋里的",
+      "column": "right",
+      "items": [
+        {
+          "id": "item_20",
+          "text": "百乐蓝色 1",
+          "completed": false
+        },
+        {
+          "id": "item_21",
+          "text": "红笔 1",
+          "completed": false
+        },
+        {
+          "id": "item_22",
+          "text": "晨光黑色 5",
+          "completed": false
+        },
+        {
+          "id": "item_23",
+          "text": "橡皮 1",
+          "completed": false
+        },
+        {
+          "id": "item_24",
+          "text": "修正带替芯 4",
+          "completed": false
+        }
+      ]
+    },
+    {
+      "id": "cat_notebooks",
+      "title": "文具 · 本子 or 纸",
+      "column": "right",
+      "items": [
+        {
+          "id": "item_25",
+          "text": "b5黄色纸",
+          "completed": false
+        },
+        {
+          "id": "item_26",
+          "text": "国誉活页本壳",
+          "completed": false
+        }
+      ]
+    },
+    {
+      "id": "cat_others",
+      "title": "一些其他",
+      "column": "right",
+      "items": [
+        {
+          "id": "item_27",
+          "text": "海露",
+          "completed": false
+        },
+        {
+          "id": "item_28",
+          "text": "小梳子",
+          "completed": false
+        },
+        {
+          "id": "item_29",
+          "text": "化妆刷子",
+          "completed": false
+        },
+        {
+          "id": "item_30",
+          "text": "皮筋",
+          "completed": false
+        },
+        {
+          "id": "item_31",
+          "text": "抓夹",
+          "completed": false
+        },
+        {
+          "id": "item_32",
+          "text": "手机壳",
+          "completed": false
+        }
+      ]
+    }
+  ]
+}
