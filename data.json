@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-21T16:07:11.894Z",
+  "updatedAt": "2026-11-21T16:07:19.612Z",
   "categories": [
     {
       "id": "cat_food",
@@ -167,7 +167,7 @@
         {
           "id": "item_27",
           "text": "海露",
-          "completed": false
+          "completed": true
         },
         {
           "id": "item_28",
