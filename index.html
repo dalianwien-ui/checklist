@@ -391,7 +391,7 @@
                         id="btn-save-and-sync"
                         class="w-full py-2.5 px-4 text-sm font-semibold text-zinc-950 bg-emerald-400 hover:bg-emerald-300 rounded-xl transition-all active:scale-[0.99]"
                     >
-                        保存并同步
+                        测试连接并同步
                     </button>
 
                     <!-- 次级操作按钮组 -->
@@ -864,10 +864,27 @@
             function parseGitHubError(status, fallbackMsg) {
                 if (status === 401) return '401 Token 无效或已过期，请检查设置';
                 if (status === 403) return '403 权限不足（请确认 Token 有 Contents 读写权限）';
-                if (status === 404) return '404 仓库、分支或文件路径不存在';
+                if (status === 404) return '404 仓库、分支 (main/master) 或文件路径不存在';
                 if (status === 409) return '409 云端版本冲突，请先刷新云端';
                 if (status === 422) return '422 请求参数或分支名无效';
                 return fallbackMsg || `请求失败 (HTTP ${status})`;
+            }
+
+            /**
+             * 带 8 秒超时熔断的 fetch 封装，防止网络不畅时无限转圈
+             */
+            async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), timeoutMs);
+                try {
+                    const response = await fetch(url, {
+                        ...options,
+                        signal: controller.signal
+                    });
+                    return response;
+                } finally {
+                    clearTimeout(timer);
+                }
             }
 
             /**
@@ -887,28 +904,29 @@
                 setSyncStatus('syncing', '拉取中...');
 
                 try {
-                    const res = await fetch(buildApiUrl(true), {
+                    const res = await fetchWithTimeout(buildApiUrl(true), {
                         method: 'GET',
                         headers: buildHeaders(),
                         cache: 'no-store'
-                    });
+                    }, 8000);
 
-                    // 如果文件不存在（404），尝试区分是“仓库不存在”还是“文件尚未创建”
+                    // 如果文件不存在（404），尝试自动初始化创建（pushToGitHub 内部自带锁释放保护）
                     if (res.status === 404) {
                         if (autoCreateIfMissing) {
+                            isSyncingNow = false;
                             const created = await pushToGitHub({
                                 forceOverwrite: false,
                                 commitMessage: 'chore: 初始化清单数据 data.json',
                                 silentToast: true
                             });
                             if (created) {
-                                if (!silentToast) showToast('云端尚未有数据文件，已自动初始化上传', 'success');
+                                if (!silentToast) showToast('连接成功！已自动初始化云端 data.json', 'success');
                                 return true;
                             }
                             return false;
                         } else {
                             setSyncStatus('error');
-                            showToast('404 仓库或数据文件不存在', 'error');
+                            showToast('404 仓库、分支或数据文件不存在', 'error');
                             return false;
                         }
                     }
@@ -946,13 +964,17 @@
                     setSyncStatus('synced');
 
                     if (!silentToast) {
-                        showToast('已拉取云端最新清单', 'success');
+                        showToast('连接成功，已拉取云端最新清单', 'success');
                     }
                     return true;
                 } catch (err) {
                     console.error('Pull error:', err);
                     setSyncStatus('error');
-                    showToast('网络异常或 JSON 解析失败，请重试', 'error');
+                    if (err && err.name === 'AbortError') {
+                        showToast('连接超时（8秒），请检查网络或代理设置', 'error');
+                    } else {
+                        showToast('连接 GitHub 失败，请检查网络或代理设置', 'error');
+                    }
                     return false;
                 } finally {
                     isSyncingNow = false;
@@ -985,11 +1007,11 @@
 
                     // 强制覆盖模式或本地无 SHA 时，先查询一次远端最新 SHA
                     if (forceOverwrite || !shaToUse) {
-                        const headRes = await fetch(buildApiUrl(true), {
+                        const headRes = await fetchWithTimeout(buildApiUrl(true), {
                             method: 'GET',
                             headers: buildHeaders(),
                             cache: 'no-store'
-                        });
+                        }, 8000);
                         if (headRes.ok) {
                             const headData = await headRes.json();
                             shaToUse = headData.sha || null;
@@ -1019,11 +1041,11 @@
                         body.sha = shaToUse;
                     }
 
-                    const putRes = await fetch(buildApiUrl(false), {
+                    const putRes = await fetchWithTimeout(buildApiUrl(false), {
                         method: 'PUT',
                         headers: buildHeaders(),
                         body: JSON.stringify(body)
-                    });
+                    }, 8000);
 
                     // 专门处理 409 版本冲突：弹出冲突处理对话框，绝不静默丢数据
                     if (putRes.status === 409) {
@@ -1053,7 +1075,11 @@
                 } catch (err) {
                     console.error('Push error:', err);
                     setSyncStatus('error');
-                    showToast('推送失败，请检查网络连接', 'error');
+                    if (err && err.name === 'AbortError') {
+                        showToast('推送超时（8秒），请检查网络或代理设置', 'error');
+                    } else {
+                        showToast('推送失败，请检查网络连接或代理设置', 'error');
+                    }
                     return false;
                 } finally {
                     isSyncingNow = false;
