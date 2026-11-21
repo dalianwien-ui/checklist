@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>极简暗色清单 · GitHub 云同步</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Inter 字体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"PingFang SC"', '"Microsoft YaHei"', 'sans-serif'],
+                    },
+                    colors: {
+                        base: '#0d0d0f',
+                        card: '#16161a',
+                        elevated: '#1e1e24',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 自定义暗色滚动条与微动效 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d0d0f;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272f;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f3f4a;
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.96) translateY(6px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-modal-in {
+            animation: modalIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes checkPop {
+            0% { transform: scale(0.75); }
+            60% { transform: scale(1.12); }
+            100% { transform: scale(1); }
+        }
+        .animate-check-pop {
+            animation: checkPop 0.22s ease-out forwards;
+        }
+        @keyframes spinSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+            animation: spinSlow 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-base text-zinc-100 font-sans antialiased min-h-screen selection:bg-sky-500/30 selection:text-sky-200">
+
+    <!-- 顶部粘性导航与同步状态栏 -->
+    <header class="sticky top-0 z-30 bg-base/85 backdrop-blur-xl border-b border-zinc-800/80">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 py-4">
+            <!-- 第一行：标题 + 同步状态与云操作 -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3.5">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="min-w-0">
+                        <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white truncate">采购与物品清单</h1>
+                        <div class="flex items-center gap-2 mt-0.5">
+                            <!-- 同步状态徽章（失败时可点击重试） -->
+                            <button
+                                type="button"
+                                id="sync-status-pill"
+                                class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full border transition-all cursor-default"
+                                title="当前云同步状态"
+                            >
+                                <span id="sync-status-dot" class="w-1.5 h-1.5 rounded-full bg-zinc-500"></span>
+                                <span id="sync-status-text">本地模式 (未配置)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右侧：云端操作 + 统计数字 -->
+                <div class="flex flex-wrap items-center justify-between md:justify-end gap-2">
+                    <div class="flex items-center gap-2">
+                        <!-- 刷新云端按钮 -->
+                        <button
+                            type="button"
+                            id="pull-cloud-btn"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-xl bg-card text-sky-300 border border-sky-500/25 hover:bg-sky-500/15 hover:border-sky-500/40 active:scale-95 transition-all"
+                            title="从 GitHub 拉取最新清单"
+                        >
+                            <svg id="pull-cloud-icon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                            </svg>
+                            <span>刷新云端</span>
+                        </button>
+
+                        <!-- 云同步设置按钮 -->
+                        <button
+                            type="button"
+                            id="open-sync-settings-btn"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-xl bg-card text-zinc-200 border border-zinc-800 hover:bg-elevated hover:border-zinc-700 active:scale-95 transition-all"
+                            title="配置 GitHub 云同步"
+                        >
+                            <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" />
+                            </svg>
+                            <span>云同步设置</span>
+                        </button>
+                    </div>
+
+                    <!-- 完成统计 -->
+                    <div class="flex items-baseline gap-1.5 bg-card border border-zinc-800/90 px-3 py-1.5 rounded-xl">
+                        <span class="text-xs text-zinc-400">已完成</span>
+                        <span id="stat-completed" class="text-sm sm:text-base font-bold text-emerald-400 tabular-nums">0</span>
+                        <span class="text-zinc-600 text-xs">/</span>
+                        <span id="stat-total" class="text-xs sm:text-sm font-medium text-zinc-300 tabular-nums">0</span>
+                        <span id="stat-percent" class="ml-1 text-xs font-medium text-zinc-500 tabular-nums">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 总体进度条 -->
+            <div class="w-full h-1.5 bg-zinc-800/90 rounded-full overflow-hidden mb-3.5">
+                <div id="progress-bar" class="h-full bg-gradient-to-r from-sky-500 to-emerald-400 rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
+            </div>
+
+            <!-- 第二行：筛选器 + 新增分类 / 重置 -->
+            <div class="flex flex-wrap items-center justify-between gap-2.5">
+                <!-- 筛选分段按钮 -->
+                <div class="inline-flex bg-card p-1 rounded-xl border border-zinc-800/80" role="tablist">
+                    <button type="button" data-filter="all" class="filter-btn px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all">
+                        全部
+                    </button>
+                    <button type="button" data-filter="active" class="filter-btn px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all">
+                        未完成
+                    </button>
+                    <button type="button" data-filter="completed" class="filter-btn px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all">
+                        已完成
+                    </button>
+                </div>
+
+                <!-- 全局管理按钮 -->
+                <div class="flex items-center gap-2">
+                    <button type="button" id="open-add-cat-btn" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 active:scale-95 transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        <span>新增分类</span>
+                    </button>
+                    <button type="button" id="open-reset-btn" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-xl bg-card text-zinc-400 border border-zinc-800 hover:text-zinc-200 hover:border-zinc-700 active:scale-95 transition-all" title="重置为初始清单">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                        </svg>
+                        <span>重置</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区域：桌面双栏，移动端单栏 -->
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 py-6 pb-24">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+            <div id="column-left" class="flex flex-col gap-5"></div>
+            <div id="column-right" class="flex flex-col gap-5"></div>
+        </div>
+    </main>
+
+    <!-- 弹窗 1：新增分类（支持选择名称与栏位） -->
+    <div id="add-cat-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+        <div class="w-full max-w-sm bg-card border border-zinc-800 rounded-2xl p-5 shadow-2xl animate-modal-in">
+            <h2 class="text-base font-semibold text-white mb-1">新增分类</h2>
+            <p class="text-xs text-zinc-400 mb-4">创建新的清单分组，并选择它在桌面端的显示栏位。</p>
+            <form id="add-cat-form" class="space-y-4">
+                <div>
+                    <label for="new-cat-name" class="block text-xs font-medium text-zinc-300 mb-1.5">分类名称</label>
+                    <input
+                        type="text"
+                        id="new-cat-name"
+                        placeholder="例如：洗漱用品、数码配件..."
+                        maxlength="30"
+                        autocomplete="off"
+                        required
+                        class="w-full px-3.5 py-2.5 text-sm bg-base border border-zinc-800 rounded-xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-sky-500/70 focus:ring-1 focus:ring-sky-500/40 transition-all"
+                    >
+                </div>
+                <div>
+                    <span class="block text-xs font-medium text-zinc-300 mb-1.5">显示位置（宽屏双栏）</span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="catColumn" value="left" class="peer sr-only" checked>
+                            <div class="px-3 py-2 text-center text-xs sm:text-sm font-medium rounded-xl border border-zinc-800 bg-base text-zinc-400 peer-checked:border-emerald-500/60 peer-checked:bg-emerald-500/15 peer-checked:text-emerald-300 transition-all">
+                                左栏（吃的等）
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="catColumn" value="right" class="peer sr-only">
+                            <div class="px-3 py-2 text-center text-xs sm:text-sm font-medium rounded-xl border border-zinc-800 bg-base text-zinc-400 peer-checked:border-sky-500/60 peer-checked:bg-sky-500/15 peer-checked:text-sky-300 transition-all">
+                                右栏（文具/其他）
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-1">
+                    <button type="button" id="cancel-add-cat" class="px-4 py-2 text-xs sm:text-sm font-medium text-zinc-400 hover:text-zinc-200 bg-elevated hover:bg-zinc-700/70 rounded-xl transition-colors">
+                        取消
+                    </button>
+                    <button type="submit" class="px-4 py-2 text-xs sm:text-sm font-medium text-zinc-950 bg-emerald-400 hover:bg-emerald-300 rounded-xl transition-colors">
+                        确认创建
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 弹窗 2：删除非空分类确认 -->
+    <div id="delete-cat-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+        <div class="w-full max-w-sm bg-card border border-zinc-800 rounded-2xl p-5 shadow-2xl animate-modal-in">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                    </svg>
+                </div>
+                <h2 class="text-base font-semibold text-white">删除分类？</h2>
+            </div>
+            <p id="delete-cat-desc" class="text-xs text-zinc-400 leading-relaxed mb-5">
+                该分类下仍有条目，删除后将一并移除。确定要删除吗？
+            </p>
+            <div class="flex items-center justify-end gap-2">
+                <button type="button" id="cancel-delete-cat" class="px-4 py-2 text-xs sm:text-sm font-medium text-zinc-300 bg-elevated hover:bg-zinc-700/70 rounded-xl transition-colors">
+                    取消
+                </button>
+                <button type="button" id="confirm-delete-cat" class="px-4 py-2 text-xs sm:text-sm font-medium text-white bg-red-600 hover:bg-red-500 rounded-xl transition-colors">
+                    确认删除
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗 3：重置清单确认 -->
+    <div id="reset-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+        <div class="w-full max-w-sm bg-card border border-zinc-800 rounded-2xl p-5 shadow-2xl animate-modal-in">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                    </svg>
+                </div>
+                <h2 class="text-base font-semibold text-white">重置为初始清单？</h2>
+            </div>
+            <p class="text-xs text-zinc-400 leading-relaxed mb-5">
+                此操作将恢复全部 5 个默认分类与 32 个条目，清除勾选记录及自定义项；如果已开启 GitHub 云同步，重置结果也会同步到云端。
+            </p>
+            <div class="flex items-center justify-end gap-2">
+                <button type="button" id="cancel-reset" class="px-4 py-2 text-xs sm:text-sm font-medium text-zinc-300 bg-elevated hover:bg-zinc-700/70 rounded-xl transition-colors">
+                    取消
+                </button>
+                <button type="button" id="confirm-reset" class="px-4 py-2 text-xs sm:text-sm font-medium text-white bg-red-600 hover:bg-red-500 rounded-xl transition-colors">
+                    确认重置
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗 4：GitHub 云同步设置 -->
+    <div id="sync-settings-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto">
+        <div class="w-full max-w-md bg-card border border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-2xl animate-modal-in my-auto">
+            <div class="flex items-center justify-between mb-1">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" />
+                    </svg>
+                    <h2 class="text-base font-semibold text-white">GitHub 云同步设置</h2>
+                </div>
+                <button type="button" id="close-sync-settings" class="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-elevated transition-colors" aria-label="关闭">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <p class="text-xs text-zinc-400 mb-4 leading-relaxed">
+                通过 GitHub Contents API 将清单保存为仓库中的 JSON 文件。配置仅保存在当前浏览器本地，不会上传给任何第三方。
+            </p>
+
+            <form id="sync-settings-form" class="space-y-3.5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label for="gh-owner" class="block text-xs font-medium text-zinc-300 mb-1">GitHub 用户名</label>
+                        <input
+                            type="text"
+                            id="gh-owner"
+                            placeholder="dalianwien-ui"
+                            autocomplete="off"
+                            required
+                            class="w-full px-3 py-2 text-sm bg-base border border-zinc-800 rounded-xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-sky-500/70 focus:ring-1 focus:ring-sky-500/40"
+                        >
+                    </div>
+                    <div>
+                        <label for="gh-repo" class="block text-xs font-medium text-zinc-300 mb-1">仓库名</label>
+                        <input
+                            type="text"
+                            id="gh-repo"
+                            placeholder="checklist"
+                            autocomplete="off"
+                            required
+                            class="w-full px-3 py-2 text-sm bg-base border border-zinc-800 rounded-xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-sky-500/70 focus:ring-1 focus:ring-sky-500/40"
+                        >
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label for="gh-path" class="block text-xs font-medium text-zinc-300 mb-1">数据文件名</label>
+                        <input
+                            type="text"
+                            id="gh-path"
+                            placeholder="data.json"
+                            autocomplete="off"
+                            required
+                            class="w-full px-3 py-2 text-sm bg-base border border-zinc-800 rounded-xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-sky-500/70 focus:ring-1 focus:ring-sky-500/40"
+                        >
+                    </div>
+                    <div>
+                        <label for="gh-branch" class="block text-xs font-medium text-zinc-300 mb-1">分支名</label>
+                        <input
+                            type="text"
+                            id="gh-branch"
+                            placeholder="main"
+                            autocomplete="off"
+                            required
+                            class="w-full px-3 py-2 text-sm bg-base border border-zinc-800 rounded-xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-sky-500/70 focus:ring-1 focus:ring-sky-500/40"
+                        >
+                    </div>
+                </div>
+
+                <div>
+                    <label for="gh-token" class="block text-xs font-medium text-zinc-300 mb-1">GitHub Token (PAT)</label>
+                    <div class="relative">
+                        <input
+                            type="password"
+                            id="gh-token"
+                            placeholder="github_pat_..."
+                            autocomplete="off"
+                            class="w-full pl-3 pr-10 py-2 text-sm bg-base border border-zinc-800 rounded-xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-sky-500/70 focus:ring-1 focus:ring-sky-500/40 font-mono"
+                        >
+                        <button
+                            type="button"
+                            id="toggle-token-visibility"
+                            class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-zinc-500 hover:text-zinc-200 rounded-lg transition-colors"
+                            title="显示/隐藏 Token"
+                            aria-label="显示或隐藏 Token"
+                        >
+                            <svg id="eye-icon-show" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <svg id="eye-icon-hide" class="w-4 h-4 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-zinc-500 mt-1">
+                        需赋予目标仓库 <span class="text-zinc-300 font-mono">Contents: Read and write</span> 权限。
+                    </p>
+                </div>
+
+                <!-- 主操作按钮 -->
+                <div class="pt-2 flex flex-col gap-2">
+                    <button
+                        type="submit"
+                        id="btn-save-and-sync"
+                        class="w-full py-2.5 px-4 text-sm font-semibold text-zinc-950 bg-emerald-400 hover:bg-emerald-300 rounded-xl transition-all active:scale-[0.99]"
+                    >
+                        保存并同步
+                    </button>
+
+                    <!-- 次级操作按钮组 -->
+                    <div class="grid grid-cols-3 gap-2">
+                        <button
+                            type="button"
+                            id="btn-pull-only"
+                            class="py-2 px-2.5 text-xs font-medium text-sky-300 bg-sky-500/10 border border-sky-500/25 hover:bg-sky-500/20 rounded-xl transition-colors"
+                        >
+                            仅拉取云端
+                        </button>
+                        <button
+                            type="button"
+                            id="btn-force-push"
+                            class="py-2 px-2.5 text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 rounded-xl transition-colors"
+                        >
+                            强制覆盖云端
+                        </button>
+                        <button
+                            type="button"
+                            id="btn-clear-config"
+                            class="py-2 px-2.5 text-xs font-medium text-red-400 bg-red-500/10 border border-red-500/25 hover:bg-red-500/20 rounded-xl transition-colors"
+                        >
+                            清除配置
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 弹窗 5：HTTP 409 版本冲突提示 -->
+    <div id="conflict-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+        <div class="w-full max-w-sm bg-card border border-amber-500/40 rounded-2xl p-5 shadow-2xl animate-modal-in">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                </div>
+                <h2 class="text-base font-semibold text-white">检测到云端有新改动</h2>
+            </div>
+            <p class="text-xs text-zinc-400 leading-relaxed mb-5">
+                另一端刚刚更新了云端清单（HTTP 409 冲突）。为避免静默覆盖对方改动，请选择处理方式：
+            </p>
+            <div class="flex flex-col gap-2">
+                <button type="button" id="conflict-pull-btn" class="w-full py-2.5 px-4 text-xs sm:text-sm font-semibold text-zinc-950 bg-sky-400 hover:bg-sky-300 rounded-xl transition-colors">
+                    拉取云端最新（推荐）
+                </button>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="conflict-force-btn" class="py-2 px-3 text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 rounded-xl transition-colors">
+                        用本地覆盖云端
+                    </button>
+                    <button type="button" id="conflict-cancel-btn" class="py-2 px-3 text-xs font-medium text-zinc-300 bg-elevated hover:bg-zinc-700/70 rounded-xl transition-colors">
+                        暂不处理
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部轻提示 Toast -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 translate-y-2 transition-all duration-200 max-w-[90vw]">
+        <div id="toast-box" class="px-4 py-2 rounded-full bg-elevated/95 border border-zinc-700 text-zinc-100 text-xs sm:text-sm font-medium shadow-xl backdrop-blur-md flex items-center gap-2">
+            <span id="toast-dot" class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
+            <span id="toast-text" class="truncate">操作成功</span>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * 极简暗色互动清单 + GitHub Contents API 云同步
+         * 功能：
+         * 1. 预置 5 分类 32 条目，localStorage 实时缓存
+         * 2. UTF-8 安全 Base64 编解码，杜绝中文乱码
+         * 3. 页面加载自动拉取、操作 800ms 防抖自动推送、404 自动建档、409 冲突安全处理
+         */
+        (function () {
+            'use strict';
+
+            // 本地存储键名
+            const DATA_STORAGE_KEY = 'minimal_dark_checklist_data_v2';
+            const CONFIG_STORAGE_KEY = 'minimal_dark_checklist_gh_config_v1';
+            const SHA_STORAGE_KEY = 'minimal_dark_checklist_gh_sha_v1';
+
+            // 默认 GitHub 配置
+            const DEFAULT_GH_CONFIG = {
+                owner: 'dalianwien-ui',
+                repo: 'checklist',
+                path: 'data.json',
+                branch: 'main',
+                token: ''
+            };
+
+            // 预置清单数据（精确 5 分类 32 条目）
+            function createInitialData() {
+                let idCounter = 1;
+                const makeItems = (names) => names.map((text) => ({
+                    id: 'item_' + (idCounter++),
+                    text,
+                    completed: false
+                }));
+
+                return [
+                    {
+                        id: 'cat_food',
+                        title: '吃的',
+                        column: 'left',
+                        items: makeItems([
+                            '米线酱',
+                            '土豆粉村驴',
+                            '冷面',
+                            '山姆黑芝麻糊',
+                            '山姆苹果干',
+                            '豆干',
+                            '金针菇',
+                            '海带丝',
+                            '小老板海苔',
+                            '波力海苔',
+                            '果滋果心软糖',
+                            '桃胶',
+                            '雪燕',
+                            '木薯珍珠',
+                            '黑糖'
+                        ])
+                    },
+                    {
+                        id: 'cat_stickers',
+                        title: '文具 · 贴纸',
+                        column: 'right',
+                        items: makeItems([
+                            '装饰电脑贴纸',
+                            '活页纸的孔孔拯救贴纸',
+                            '少许姓名贴',
+                            '透明胶带'
+                        ])
+                    },
+                    {
+                        id: 'cat_pencilcase',
+                        title: '文具 · 笔袋里的',
+                        column: 'right',
+                        items: makeItems([
+                            '百乐蓝色 1',
+                            '红笔 1',
+                            '晨光黑色 5',
+                            '橡皮 1',
+                            '修正带替芯 4'
+                        ])
+                    },
+                    {
+                        id: 'cat_notebooks',
+                        title: '文具 · 本子 or 纸',
+                        column: 'right',
+                        items: makeItems([
+                            'b5黄色纸',
+                            '国誉活页本壳'
+                        ])
+                    },
+                    {
+                        id: 'cat_others',
+                        title: '一些其他',
+                        column: 'right',
+                        items: makeItems([
+                            '海露',
+                            '小梳子',
+                            '化妆刷子',
+                            '皮筋',
+                            '抓夹',
+                            '手机壳'
+                        ])
+                    }
+                ];
+            }
+
+            // 应用全局状态
+            let categories = [];
+            let currentFilter = 'all'; // 'all' | 'active' | 'completed'
+            let ghConfig = { ...DEFAULT_GH_CONFIG };
+            let lastSha = null;
+            let syncState = 'local'; // 'local' | 'syncing' | 'synced' | 'error'
+            let lastSyncTimeStr = '';
+            let pushDebounceTimer = null;
+            let isSyncingNow = false;
+            let pendingPushAfterSync = false;
+            let pendingDeleteCatId = null;
+            let toastTimer = null;
+
+            // DOM 引用
+            const columnLeft = document.getElementById('column-left');
+            const columnRight = document.getElementById('column-right');
+            const statCompleted = document.getElementById('stat-completed');
+            const statTotal = document.getElementById('stat-total');
+            const statPercent = document.getElementById('stat-percent');
+            const progressBar = document.getElementById('progress-bar');
+            const filterBtns = document.querySelectorAll('.filter-btn');
+
+            // 顶部同步状态与按钮
+            const syncStatusPill = document.getElementById('sync-status-pill');
+            const syncStatusDot = document.getElementById('sync-status-dot');
+            const syncStatusText = document.getElementById('sync-status-text');
+            const pullCloudBtn = document.getElementById('pull-cloud-btn');
+            const pullCloudIcon = document.getElementById('pull-cloud-icon');
+            const openSyncSettingsBtn = document.getElementById('open-sync-settings-btn');
+
+            // 弹窗：新增分类
+            const addCatModal = document.getElementById('add-cat-modal');
+            const openAddCatBtn = document.getElementById('open-add-cat-btn');
+            const cancelAddCatBtn = document.getElementById('cancel-add-cat');
+            const addCatForm = document.getElementById('add-cat-form');
+            const newCatNameInput = document.getElementById('new-cat-name');
+
+            // 弹窗：删除分类确认
+            const deleteCatModal = document.getElementById('delete-cat-modal');
+            const deleteCatDesc = document.getElementById('delete-cat-desc');
+            const cancelDeleteCatBtn = document.getElementById('cancel-delete-cat');
+            const confirmDeleteCatBtn = document.getElementById('confirm-delete-cat');
+
+            // 弹窗：重置确认
+            const resetModal = document.getElementById('reset-modal');
+            const openResetBtn = document.getElementById('open-reset-btn');
+            const cancelResetBtn = document.getElementById('cancel-reset');
+            const confirmResetBtn = document.getElementById('confirm-reset');
+
+            // 弹窗：云同步设置
+            const syncSettingsModal = document.getElementById('sync-settings-modal');
+            const closeSyncSettingsBtn = document.getElementById('close-sync-settings');
+            const syncSettingsForm = document.getElementById('sync-settings-form');
+            const ghOwnerInput = document.getElementById('gh-owner');
+            const ghRepoInput = document.getElementById('gh-repo');
+            const ghPathInput = document.getElementById('gh-path');
+            const ghBranchInput = document.getElementById('gh-branch');
+            const ghTokenInput = document.getElementById('gh-token');
+            const toggleTokenBtn = document.getElementById('toggle-token-visibility');
+            const eyeIconShow = document.getElementById('eye-icon-show');
+            const eyeIconHide = document.getElementById('eye-icon-hide');
+            const btnPullOnly = document.getElementById('btn-pull-only');
+            const btnForcePush = document.getElementById('btn-force-push');
+            const btnClearConfig = document.getElementById('btn-clear-config');
+
+            // 弹窗：409 冲突
+            const conflictModal = document.getElementById('conflict-modal');
+            const conflictPullBtn = document.getElementById('conflict-pull-btn');
+            const conflictForceBtn = document.getElementById('conflict-force-btn');
+            const conflictCancelBtn = document.getElementById('conflict-cancel-btn');
+
+            // Toast
+            const toastEl = document.getElementById('toast');
+            const toastDotEl = document.getElementById('toast-dot');
+            const toastTextEl = document.getElementById('toast-text');
+
+            /* ==================== 工具函数 ==================== */
+
+            // HTML 转义，防止 XSS
+            function escapeHtml(str) {
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            // 生成唯一 ID
+            function generateId(prefix) {
+                return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+            }
+
+            // 格式化当前时间为 HH:MM
+            function formatTimeNow() {
+                const now = new Date();
+                const h = String(now.getHours()).padStart(2, '0');
+                const m = String(now.getMinutes()).padStart(2, '0');
+                return `${h}:${m}`;
+            }
+
+            // UTF-8 安全的 Base64 编码（使用 TextEncoder，绝不损坏中文）
+            function utf8ToBase64(str) {
+                const bytes = new TextEncoder().encode(str);
+                let binary = '';
+                const chunkSize = 0x8000;
+                for (let i = 0; i < bytes.length; i += chunkSize) {
+                    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+                }
+                return btoa(binary);
+            }
+
+            // UTF-8 安全的 Base64 解码（使用 TextDecoder，绝不损坏中文）
+            function base64ToUtf8(base64) {
+                const cleaned = base64.replace(/\s+/g, '');
+                const binary = atob(cleaned);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                return new TextDecoder().decode(bytes);
+            }
+
+            // 显示底部 Toast 通知（type: 'success' | 'info' | 'error' | 'warn'）
+            function showToast(message, type = 'success') {
+                toastTextEl.textContent = message;
+                const dotColors = {
+                    success: 'bg-emerald-400',
+                    info: 'bg-sky-400',
+                    warn: 'bg-amber-400',
+                    error: 'bg-red-400'
+                };
+                toastDotEl.className = `w-2 h-2 rounded-full shrink-0 ${dotColors[type] || dotColors.success}`;
+
+                toastEl.classList.remove('opacity-0', 'translate-y-2');
+                toastEl.classList.add('opacity-100', 'translate-y-0');
+
+                if (toastTimer) clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => {
+                    toastEl.classList.remove('opacity-100', 'translate-y-0');
+                    toastEl.classList.add('opacity-0', 'translate-y-2');
+                }, type === 'error' ? 3600 : 2200);
+            }
+
+            // 弹窗开关辅助函数
+            function openModal(modalEl, focusEl) {
+                modalEl.classList.remove('hidden');
+                modalEl.classList.add('flex');
+                if (focusEl) {
+                    setTimeout(() => focusEl.focus(), 50);
+                }
+            }
+
+            function closeModal(modalEl) {
+                modalEl.classList.add('hidden');
+                modalEl.classList.remove('flex');
+            }
+
+            /* ==================== 本地持久化 ==================== */
+
+            function isCloudConfigured() {
+                return Boolean(
+                    ghConfig.owner && ghConfig.owner.trim() &&
+                    ghConfig.repo && ghConfig.repo.trim() &&
+                    ghConfig.path && ghConfig.path.trim() &&
+                    ghConfig.token && ghConfig.token.trim()
+                );
+            }
+
+            function loadLocalState() {
+                // 加载 GitHub 配置
+                try {
+                    const rawCfg = localStorage.getItem(CONFIG_STORAGE_KEY);
+                    if (rawCfg) {
+                        const parsed = JSON.parse(rawCfg);
+                        ghConfig = { ...DEFAULT_GH_CONFIG, ...parsed };
+                    }
+                } catch (e) {
+                    console.warn('读取同步配置失败:', e);
+                }
+
+                // 加载上次 SHA
+                try {
+                    lastSha = localStorage.getItem(SHA_STORAGE_KEY) || null;
+                } catch (e) {
+                    lastSha = null;
+                }
+
+                // 加载本地清单缓存
+                try {
+                    const rawData = localStorage.getItem(DATA_STORAGE_KEY);
+                    if (rawData) {
+                        const parsed = JSON.parse(rawData);
+                        if (Array.isArray(parsed)) {
+                            categories = parsed;
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('读取本地清单缓存失败:', e);
+                }
+
+                categories = createInitialData();
+                saveLocalData();
+            }
+
+            function saveLocalData() {
+                try {
+                    localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(categories));
+                } catch (e) {
+                    console.warn('保存本地清单缓存失败:', e);
+                }
+            }
+
+            function saveGhConfig() {
+                try {
+                    localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(ghConfig));
+                } catch (e) {
+                    console.warn('保存同步配置失败:', e);
+                }
+            }
+
+            function saveSha(sha) {
+                lastSha = sha || null;
+                try {
+                    if (lastSha) {
+                        localStorage.setItem(SHA_STORAGE_KEY, lastSha);
+                    } else {
+                        localStorage.removeItem(SHA_STORAGE_KEY);
+                    }
+                } catch (e) {
+                    console.warn('保存 SHA 失败:', e);
+                }
+            }
+
+            /* ==================== 同步状态 UI ==================== */
+
+            function setSyncStatus(state, customLabel) {
+                syncState = state;
+                syncStatusPill.classList.remove(
+                    'bg-zinc-800/80', 'border-zinc-700/80', 'text-zinc-400',
+                    'bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-300',
+                    'bg-sky-500/10', 'border-sky-500/30', 'text-sky-300',
+                    'bg-red-500/10', 'border-red-500/30', 'text-red-300',
+                    'cursor-pointer', 'hover:bg-red-500/20', 'cursor-default'
+                );
+
+                if (state === 'local') {
+                    syncStatusPill.classList.add('bg-zinc-800/80', 'border-zinc-700/80', 'text-zinc-400', 'cursor-default');
+                    syncStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-zinc-500';
+                    syncStatusText.textContent = customLabel || '本地模式 (未配置)';
+                    pullCloudIcon.classList.remove('animate-spin-slow');
+                } else if (state === 'syncing') {
+                    syncStatusPill.classList.add('bg-sky-500/10', 'border-sky-500/30', 'text-sky-300', 'cursor-default');
+                    syncStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse';
+                    syncStatusText.textContent = customLabel || '同步中...';
+                    pullCloudIcon.classList.add('animate-spin-slow');
+                } else if (state === 'synced') {
+                    lastSyncTimeStr = formatTimeNow();
+                    syncStatusPill.classList.add('bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-300', 'cursor-default');
+                    syncStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400';
+                    syncStatusText.textContent = customLabel || `已同步 · ${lastSyncTimeStr}`;
+                    pullCloudIcon.classList.remove('animate-spin-slow');
+                } else if (state === 'error') {
+                    syncStatusPill.classList.add('bg-red-500/10', 'border-red-500/30', 'text-red-300', 'cursor-pointer', 'hover:bg-red-500/20');
+                    syncStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-red-400';
+                    syncStatusText.textContent = customLabel || '同步失败 (点击重试)';
+                    pullCloudIcon.classList.remove('animate-spin-slow');
+                }
+            }
+
+            /* ==================== GitHub Contents API 核心引擎 ==================== */
+
+            function buildApiUrl(withCacheBust = false) {
+                const owner = encodeURIComponent(ghConfig.owner.trim());
+                const repo = encodeURIComponent(ghConfig.repo.trim());
+                // 对路径分段编码，保留斜杠
+                const encodedPath = ghConfig.path.trim().split('/').map(encodeURIComponent).join('/');
+                const branch = encodeURIComponent((ghConfig.branch || 'main').trim());
+                let url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodedPath}`;
+                if (withCacheBust) {
+                    url += `?ref=${branch}&_t=${Date.now()}`;
+                }
+                return url;
+            }
+
+            function buildHeaders() {
+                return {
+                    'Accept': 'application/vnd.github+json',
+                    'Authorization': `Bearer ${ghConfig.token.trim()}`,
+                    'X-GitHub-Api-Version': '2022-11-28',
+                    'Content-Type': 'application/json'
+                };
+            }
+
+            function parseGitHubError(status, fallbackMsg) {
+                if (status === 401) return '401 Token 无效或已过期，请检查设置';
+                if (status === 403) return '403 权限不足（请确认 Token 有 Contents 读写权限）';
+                if (status === 404) return '404 仓库、分支或文件路径不存在';
+                if (status === 409) return '409 云端版本冲突，请先刷新云端';
+                if (status === 422) return '422 请求参数或分支名无效';
+                return fallbackMsg || `请求失败 (HTTP ${status})`;
+            }
+
+            /**
+             * 拉取云端 data.json
+             * @param {Object} options
+             * @param {boolean} options.autoCreateIfMissing 若 404 是否自动创建文件
+             * @param {boolean} options.silentToast 是否静默成功提示
+             */
+            async function pullFromGitHub({ autoCreateIfMissing = true, silentToast = false } = {}) {
+                if (!isCloudConfigured()) {
+                    setSyncStatus('local');
+                    if (!silentToast) showToast('请先配置 GitHub 云同步', 'info');
+                    return false;
+                }
+
+                isSyncingNow = true;
+                setSyncStatus('syncing', '拉取中...');
+
+                try {
+                    const res = await fetch(buildApiUrl(true), {
+                        method: 'GET',
+                        headers: buildHeaders(),
+                        cache: 'no-store'
+                    });
+
+                    // 如果文件不存在（404），尝试区分是“仓库不存在”还是“文件尚未创建”
+                    if (res.status === 404) {
+                        if (autoCreateIfMissing) {
+                            const created = await pushToGitHub({
+                                forceOverwrite: false,
+                                commitMessage: 'chore: 初始化清单数据 data.json',
+                                silentToast: true
+                            });
+                            if (created) {
+                                if (!silentToast) showToast('云端尚未有数据文件，已自动初始化上传', 'success');
+                                return true;
+                            }
+                            return false;
+                        } else {
+                            setSyncStatus('error');
+                            showToast('404 仓库或数据文件不存在', 'error');
+                            return false;
+                        }
+                    }
+
+                    if (!res.ok) {
+                        const msg = parseGitHubError(res.status);
+                        setSyncStatus('error');
+                        showToast(msg, 'error');
+                        return false;
+                    }
+
+                    const data = await res.json();
+                    if (!data || typeof data.content !== 'string') {
+                        setSyncStatus('error');
+                        showToast('云端返回的数据格式异常', 'error');
+                        return false;
+                    }
+
+                    const decodedStr = base64ToUtf8(data.content);
+                    const parsedJson = JSON.parse(decodedStr);
+                    const nextCategories = Array.isArray(parsedJson)
+                        ? parsedJson
+                        : (Array.isArray(parsedJson.categories) ? parsedJson.categories : null);
+
+                    if (!nextCategories) {
+                        setSyncStatus('error');
+                        showToast('云端 JSON 结构无法解析为清单', 'error');
+                        return false;
+                    }
+
+                    categories = nextCategories;
+                    saveLocalData();
+                    saveSha(data.sha);
+                    render();
+                    setSyncStatus('synced');
+
+                    if (!silentToast) {
+                        showToast('已拉取云端最新清单', 'success');
+                    }
+                    return true;
+                } catch (err) {
+                    console.error('Pull error:', err);
+                    setSyncStatus('error');
+                    showToast('网络异常或 JSON 解析失败，请重试', 'error');
+                    return false;
+                } finally {
+                    isSyncingNow = false;
+                }
+            }
+
+            /**
+             * 推送当前清单到 GitHub
+             * @param {Object} options
+             * @param {boolean} options.forceOverwrite 是否先获取最新 SHA 强制覆盖
+             * @param {string} options.commitMessage 提交说明
+             * @param {boolean} options.silentToast 是否静默成功提示
+             */
+            async function pushToGitHub({ forceOverwrite = false, commitMessage = 'chore: 更新清单状态', silentToast = false } = {}) {
+                if (!isCloudConfigured()) {
+                    setSyncStatus('local');
+                    return false;
+                }
+
+                if (isSyncingNow && !forceOverwrite) {
+                    pendingPushAfterSync = true;
+                    return false;
+                }
+
+                isSyncingNow = true;
+                setSyncStatus('syncing', '同步中...');
+
+                try {
+                    let shaToUse = lastSha;
+
+                    // 强制覆盖模式或本地无 SHA 时，先查询一次远端最新 SHA
+                    if (forceOverwrite || !shaToUse) {
+                        const headRes = await fetch(buildApiUrl(true), {
+                            method: 'GET',
+                            headers: buildHeaders(),
+                            cache: 'no-store'
+                        });
+                        if (headRes.ok) {
+                            const headData = await headRes.json();
+                            shaToUse = headData.sha || null;
+                        } else if (headRes.status === 404) {
+                            shaToUse = null; // 文件尚未存在，直接新建
+                        } else {
+                            const msg = parseGitHubError(headRes.status);
+                            setSyncStatus('error');
+                            showToast(msg, 'error');
+                            return false;
+                        }
+                    }
+
+                    const payloadObj = {
+                        updatedAt: new Date().toISOString(),
+                        categories: categories
+                    };
+                    const jsonString = JSON.stringify(payloadObj, null, 2);
+                    const contentBase64 = utf8ToBase64(jsonString);
+
+                    const body = {
+                        message: commitMessage,
+                        content: contentBase64,
+                        branch: (ghConfig.branch || 'main').trim()
+                    };
+                    if (shaToUse) {
+                        body.sha = shaToUse;
+                    }
+
+                    const putRes = await fetch(buildApiUrl(false), {
+                        method: 'PUT',
+                        headers: buildHeaders(),
+                        body: JSON.stringify(body)
+                    });
+
+                    // 专门处理 409 版本冲突：弹出冲突处理对话框，绝不静默丢数据
+                    if (putRes.status === 409) {
+                        setSyncStatus('error', '云端有冲突 (点击处理)');
+                        openModal(conflictModal);
+                        showToast('检测到云端版本冲突，请选择合并方式', 'warn');
+                        return false;
+                    }
+
+                    if (!putRes.ok) {
+                        const msg = parseGitHubError(putRes.status);
+                        setSyncStatus('error');
+                        showToast(msg, 'error');
+                        return false;
+                    }
+
+                    const putData = await putRes.json();
+                    if (putData && putData.content && putData.content.sha) {
+                        saveSha(putData.content.sha);
+                    }
+
+                    setSyncStatus('synced');
+                    if (!silentToast) {
+                        showToast('已同步到 GitHub 云端', 'success');
+                    }
+                    return true;
+                } catch (err) {
+                    console.error('Push error:', err);
+                    setSyncStatus('error');
+                    showToast('推送失败，请检查网络连接', 'error');
+                    return false;
+                } finally {
+                    isSyncingNow = false;
+                    if (pendingPushAfterSync) {
+                        pendingPushAfterSync = false;
+                        scheduleAutoPush();
+                    }
+                }
+            }
+
+            // 防抖自动推送（800ms）
+            function scheduleAutoPush() {
+                if (!isCloudConfigured()) return;
+                if (pushDebounceTimer) clearTimeout(pushDebounceTimer);
+                setSyncStatus('syncing', '准备同步...');
+                pushDebounceTimer = setTimeout(() => {
+                    pushToGitHub({ silentToast: true });
+                }, 800);
+            }
+
+            /* ==================== 界面渲染逻辑 ==================== */
+
+            function updateStats() {
+                let total = 0;
+                let completed = 0;
+
+                categories.forEach((cat) => {
+                    total += cat.items.length;
+                    cat.items.forEach((item) => {
+                        if (item.completed) completed++;
+                    });
+                });
+
+                const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+                statCompleted.textContent = completed;
+                statTotal.textContent = total;
+                statPercent.textContent = `${percent}%`;
+                progressBar.style.width = `${percent}%`;
+            }
+
+            function updateFilterButtons() {
+                filterBtns.forEach((btn) => {
+                    const isActive = btn.dataset.filter === currentFilter;
+                    if (isActive) {
+                        btn.className = 'filter-btn px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all bg-elevated text-emerald-400 shadow-sm';
+                    } else {
+                        btn.className = 'filter-btn px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all text-zinc-400 hover:text-zinc-200';
+                    }
+                });
+            }
+
+            function buildCategoryCard(cat) {
+                const totalCount = cat.items.length;
+                const completedCount = cat.items.filter((i) => i.completed).length;
+
+                const visibleItems = cat.items.filter((item) => {
+                    if (currentFilter === 'active') return !item.completed;
+                    if (currentFilter === 'completed') return item.completed;
+                    return true;
+                });
+
+                let itemsHtml = '';
+                if (visibleItems.length > 0) {
+                    itemsHtml = visibleItems.map((item) => {
+                        const checked = item.completed;
+                        return `
+                            <li class="group flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl hover:bg-elevated/80 transition-colors">
+                                <div
+                                    role="checkbox"
+                                    aria-checked="${checked}"
+                                    tabindex="0"
+                                    data-action="toggle"
+                                    data-cat-id="${cat.id}"
+                                    data-item-id="${item.id}"
+                                    class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer select-none py-0.5"
+                                >
+                                    <!-- 圆形复选框 -->
+                                    <span class="w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 ${
+                                        checked
+                                            ? 'bg-emerald-400 border-emerald-400 text-zinc-950 animate-check-pop'
+                                            : 'border-2 border-zinc-600 group-hover:border-sky-400/80 bg-transparent'
+                                    }">
+                                        ${checked ? `
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                            </svg>
+                                        ` : ''}
+                                    </span>
+                                    <!-- 条目文字 -->
+                                    <span class="text-sm sm:text-[15px] leading-snug break-words transition-all duration-200 ${
+                                        checked
+                                            ? 'line-through text-zinc-500 opacity-65'
+                                            : 'text-zinc-100'
+                                    }">
+                                        ${escapeHtml(item.text)}
+                                    </span>
+                                </div>
+
+                                <!-- 删除条目按钮：移动端常显便于点按，桌面端悬停显示 -->
+                                <button
+                                    type="button"
+                                    data-action="delete-item"
+                                    data-cat-id="${cat.id}"
+                                    data-item-id="${item.id}"
+                                    aria-label="删除条目"
+                                    title="删除此项"
+                                    class="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 transition-all shrink-0"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </li>
+                        `;
+                    }).join('');
+                } else {
+                    let emptyText = '该分类暂无条目，在下方快速添加';
+                    if (totalCount > 0 && currentFilter === 'active') {
+                        emptyText = '太棒了，该分类已全部完成 ✓';
+                    } else if (totalCount > 0 && currentFilter === 'completed') {
+                        emptyText = '该分类暂无已完成项';
+                    }
+                    itemsHtml = `
+                        <li class="py-5 text-center text-xs text-zinc-500 select-none">
+                            ${emptyText}
+                        </li>
+                    `;
+                }
+
+                const isAllDone = totalCount > 0 && completedCount === totalCount;
+
+                return `
+                    <section class="bg-card border border-zinc-800/80 rounded-2xl p-4 sm:p-5 shadow-lg shadow-black/25 flex flex-col">
+                        <!-- 分类标题栏 -->
+                        <div class="flex items-center justify-between gap-2 pb-3 mb-2 border-b border-zinc-800/75">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <h2 class="text-base sm:text-lg font-bold text-white truncate">${escapeHtml(cat.title)}</h2>
+                                <span class="px-2 py-0.5 text-xs font-medium rounded-full tabular-nums ${
+                                    isAllDone
+                                        ? 'bg-emerald-500/15 text-emerald-400'
+                                        : 'bg-elevated text-zinc-400'
+                                }">
+                                    ${completedCount}/${totalCount}
+                                </span>
+                            </div>
+                            <button
+                                type="button"
+                                data-action="delete-cat"
+                                data-cat-id="${cat.id}"
+                                class="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+                                title="删除此分类"
+                                aria-label="删除分类"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- 条目列表 -->
+                        <ul class="flex flex-col gap-0.5 mb-3">
+                            ${itemsHtml}
+                        </ul>
+
+                        <!-- 分组底部快速添加 -->
+                        <form data-action="add-item" data-cat-id="${cat.id}" class="flex items-center gap-2 pt-2.5 border-t border-zinc-800/60 mt-auto">
+                            <input
+                                type="text"
+                                name="itemText"
+                                placeholder="添加到「${escapeHtml(cat.title)}」..."
+                                autocomplete="off"
+                                maxlength="60"
+                                class="flex-1 min-w-0 px-3 py-2 text-sm bg-base border border-zinc-800 rounded-xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-sky-500/60 focus:ring-1 focus:ring-sky-500/30 transition-all"
+                            >
+                            <button
+                                type="submit"
+                                class="w-9 h-9 flex items-center justify-center rounded-xl bg-elevated hover:bg-emerald-400 text-zinc-200 hover:text-zinc-950 active:scale-95 transition-all shrink-0"
+                                title="添加条目"
+                                aria-label="添加条目"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                </svg>
+                            </button>
+                        </form>
+                    </section>
+                `;
+            }
+
+            function render() {
+                const leftCats = categories.filter((c) => c.column === 'left');
+                const rightCats = categories.filter((c) => c.column !== 'left');
+
+                columnLeft.innerHTML = leftCats.map(buildCategoryCard).join('');
+                columnRight.innerHTML = rightCats.map(buildCategoryCard).join('');
+
+                updateStats();
+                updateFilterButtons();
+            }
+
+            /* ==================== 清单数据操作 ==================== */
+
+            function commitLocalChange() {
+                saveLocalData();
+                render();
+                scheduleAutoPush();
+            }
+
+            function toggleItem(catId, itemId) {
+                const cat = categories.find((c) => c.id === catId);
+                if (!cat) return;
+                const item = cat.items.find((i) => i.id === itemId);
+                if (!item) return;
+
+                item.completed = !item.completed;
+                commitLocalChange();
+            }
+
+            function addItem(catId, text) {
+                const trimmed = text.trim();
+                if (!trimmed) return;
+
+                const cat = categories.find((c) => c.id === catId);
+                if (!cat) return;
+
+                cat.items.push({
+                    id: generateId('item'),
+                    text: trimmed,
+                    completed: false
+                });
+                commitLocalChange();
+                showToast(`已添加到「${cat.title}」`, 'success');
+            }
+
+            function deleteItem(catId, itemId) {
+                const cat = categories.find((c) => c.id === catId);
+                if (!cat) return;
+
+                cat.items = cat.items.filter((i) => i.id !== itemId);
+                commitLocalChange();
+                showToast('已删除条目', 'info');
+            }
+
+            function addCategory(title, column) {
+                const trimmed = title.trim();
+                if (!trimmed) return;
+
+                categories.push({
+                    id: generateId('cat'),
+                    title: trimmed,
+                    column: column === 'left' ? 'left' : 'right',
+                    items: []
+                });
+                commitLocalChange();
+                showToast(`已创建分类「${trimmed}」`, 'success');
+            }
+
+            function requestDeleteCategory(catId) {
+                const cat = categories.find((c) => c.id === catId);
+                if (!cat) return;
+
+                // 空分类直接删除；非空分类弹窗二次确认
+                if (cat.items.length === 0) {
+                    performDeleteCategory(catId);
+                } else {
+                    pendingDeleteCatId = catId;
+                    deleteCatDesc.textContent = `分类「${cat.title}」下仍有 ${cat.items.length} 个条目，删除后将一并移除。确定要删除吗？`;
+                    openModal(deleteCatModal);
+                }
+            }
+
+            function performDeleteCategory(catId) {
+                const cat = categories.find((c) => c.id === catId);
+                if (!cat) return;
+
+                categories = categories.filter((c) => c.id !== catId);
+                commitLocalChange();
+                showToast(`已删除分类「${cat.title}」`, 'info');
+            }
+
+            function resetToInitial() {
+                categories = createInitialData();
+                currentFilter = 'all';
+                commitLocalChange();
+                showToast('已重置为初始清单', 'info');
+            }
+
+            /* ==================== 设置弹窗数据读写 ==================== */
+
+            function populateSyncForm() {
+                ghOwnerInput.value = ghConfig.owner || DEFAULT_GH_CONFIG.owner;
+                ghRepoInput.value = ghConfig.repo || DEFAULT_GH_CONFIG.repo;
+                ghPathInput.value = ghConfig.path || DEFAULT_GH_CONFIG.path;
+                ghBranchInput.value = ghConfig.branch || DEFAULT_GH_CONFIG.branch;
+                ghTokenInput.value = ghConfig.token || '';
+                // 重置密码可见性为隐藏
+                ghTokenInput.type = 'password';
+                eyeIconShow.classList.remove('hidden');
+                eyeIconHide.classList.add('hidden');
+            }
+
+            function readSyncFormIntoConfig() {
+                ghConfig = {
+                    owner: ghOwnerInput.value.trim() || DEFAULT_GH_CONFIG.owner,
+                    repo: ghRepoInput.value.trim() || DEFAULT_GH_CONFIG.repo,
+                    path: ghPathInput.value.trim() || DEFAULT_GH_CONFIG.path,
+                    branch: ghBranchInput.value.trim() || DEFAULT_GH_CONFIG.branch,
+                    token: ghTokenInput.value.trim()
+                };
+                saveGhConfig();
+            }
+
+            /* ==================== 事件绑定 ==================== */
+
+            function bindEvents() {
+                const mainEl = document.querySelector('main');
+
+                // 列表点击委托
+                mainEl.addEventListener('click', (e) => {
+                    const target = e.target.closest('[data-action]');
+                    if (!target) return;
+
+                    const { action, catId, itemId } = target.dataset;
+                    if (action === 'toggle') {
+                        toggleItem(catId, itemId);
+                    } else if (action === 'delete-item') {
+                        deleteItem(catId, itemId);
+                    } else if (action === 'delete-cat') {
+                        requestDeleteCategory(catId);
+                    }
+                });
+
+                // 键盘辅助勾选
+                mainEl.addEventListener('keydown', (e) => {
+                    if (e.key !== 'Enter' && e.key !== ' ') return;
+                    const target = e.target.closest('[data-action="toggle"]');
+                    if (!target) return;
+                    e.preventDefault();
+                    toggleItem(target.dataset.catId, target.dataset.itemId);
+                });
+
+                // 分组底部表单提交
+                mainEl.addEventListener('submit', (e) => {
+                    const form = e.target.closest('form[data-action="add-item"]');
+                    if (!form) return;
+                    e.preventDefault();
+                    const catId = form.dataset.catId;
+                    const input = form.querySelector('input[name="itemText"]');
+                    if (!input || !input.value.trim()) return;
+
+                    addItem(catId, input.value);
+                    const updatedInput = document.querySelector(`form[data-cat-id="${catId}"] input[name="itemText"]`);
+                    if (updatedInput) updatedInput.focus();
+                });
+
+                // 筛选按钮
+                filterBtns.forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        currentFilter = btn.dataset.filter;
+                        render();
+                    });
+                });
+
+                // 状态徽章（错误时点击重试）
+                syncStatusPill.addEventListener('click', () => {
+                    if (syncState === 'error') {
+                        if (isCloudConfigured()) {
+                            pushToGitHub({ silentToast: false });
+                        } else {
+                            populateSyncForm();
+                            openModal(syncSettingsModal, ghTokenInput);
+                        }
+                    }
+                });
+
+                // 顶部“刷新云端”按钮
+                pullCloudBtn.addEventListener('click', () => {
+                    if (!isCloudConfigured()) {
+                        populateSyncForm();
+                        openModal(syncSettingsModal, ghTokenInput);
+                        showToast('请先填写 GitHub Token 以开启云同步', 'info');
+                        return;
+                    }
+                    pullFromGitHub({ autoCreateIfMissing: true, silentToast: false });
+                });
+
+                // 顶部“云同步设置”按钮
+                openSyncSettingsBtn.addEventListener('click', () => {
+                    populateSyncForm();
+                    openModal(syncSettingsModal, ghTokenInput);
+                });
+                closeSyncSettingsBtn.addEventListener('click', () => closeModal(syncSettingsModal));
+                syncSettingsModal.addEventListener('click', (e) => {
+                    if (e.target === syncSettingsModal) closeModal(syncSettingsModal);
+                });
+
+                // 显示/隐藏 Token
+                toggleTokenBtn.addEventListener('click', () => {
+                    const isHidden = ghTokenInput.type === 'password';
+                    ghTokenInput.type = isHidden ? 'text' : 'password';
+                    eyeIconShow.classList.toggle('hidden', isHidden);
+                    eyeIconHide.classList.toggle('hidden', !isHidden);
+                });
+
+                // 保存并同步
+                syncSettingsForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    readSyncFormIntoConfig();
+                    if (!isCloudConfigured()) {
+                        setSyncStatus('local');
+                        showToast('请输入有效的 GitHub Token', 'warn');
+                        ghTokenInput.focus();
+                        return;
+                    }
+                    closeModal(syncSettingsModal);
+                    await pullFromGitHub({ autoCreateIfMissing: true, silentToast: false });
+                });
+
+                // 仅拉取云端
+                btnPullOnly.addEventListener('click', async () => {
+                    readSyncFormIntoConfig();
+                    if (!isCloudConfigured()) {
+                        showToast('请先填写 GitHub Token', 'warn');
+                        ghTokenInput.focus();
+                        return;
+                    }
+                    closeModal(syncSettingsModal);
+                    await pullFromGitHub({ autoCreateIfMissing: false, silentToast: false });
+                });
+
+                // 强制覆盖云端
+                btnForcePush.addEventListener('click', async () => {
+                    readSyncFormIntoConfig();
+                    if (!isCloudConfigured()) {
+                        showToast('请先填写 GitHub Token', 'warn');
+                        ghTokenInput.focus();
+                        return;
+                    }
+                    closeModal(syncSettingsModal);
+                    await pushToGitHub({
+                        forceOverwrite: true,
+                        commitMessage: 'chore: 强制覆盖更新清单数据',
+                        silentToast: false
+                    });
+                });
+
+                // 清除配置
+                btnClearConfig.addEventListener('click', () => {
+                    ghConfig = { ...DEFAULT_GH_CONFIG };
+                    saveGhConfig();
+                    saveSha(null);
+                    setSyncStatus('local');
+                    populateSyncForm();
+                    closeModal(syncSettingsModal);
+                    showToast('已清除云同步配置，切换回本地模式', 'info');
+                });
+
+                // 冲突处理弹窗
+                conflictPullBtn.addEventListener('click', async () => {
+                    closeModal(conflictModal);
+                    await pullFromGitHub({ autoCreateIfMissing: false, silentToast: false });
+                });
+                conflictForceBtn.addEventListener('click', async () => {
+                    closeModal(conflictModal);
+                    await pushToGitHub({
+                        forceOverwrite: true,
+                        commitMessage: 'chore: 解决冲突并覆盖云端清单',
+                        silentToast: false
+                    });
+                });
+                conflictCancelBtn.addEventListener('click', () => closeModal(conflictModal));
+                conflictModal.addEventListener('click', (e) => {
+                    if (e.target === conflictModal) closeModal(conflictModal);
+                });
+
+                // 新增分类弹窗
+                openAddCatBtn.addEventListener('click', () => {
+                    newCatNameInput.value = '';
+                    openModal(addCatModal, newCatNameInput);
+                });
+                cancelAddCatBtn.addEventListener('click', () => closeModal(addCatModal));
+                addCatModal.addEventListener('click', (e) => {
+                    if (e.target === addCatModal) closeModal(addCatModal);
+                });
+                addCatForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const name = newCatNameInput.value.trim();
+                    const colInput = addCatForm.querySelector('input[name="catColumn"]:checked');
+                    const col = colInput ? colInput.value : 'right';
+                    if (name) {
+                        addCategory(name, col);
+                        closeModal(addCatModal);
+                    }
+                });
+
+                // 删除非空分类确认弹窗
+                cancelDeleteCatBtn.addEventListener('click', () => {
+                    pendingDeleteCatId = null;
+                    closeModal(deleteCatModal);
+                });
+                deleteCatModal.addEventListener('click', (e) => {
+                    if (e.target === deleteCatModal) {
+                        pendingDeleteCatId = null;
+                        closeModal(deleteCatModal);
+                    }
+                });
+                confirmDeleteCatBtn.addEventListener('click', () => {
+                    if (pendingDeleteCatId) {
+                        performDeleteCategory(pendingDeleteCatId);
+                        pendingDeleteCatId = null;
+                    }
+                    closeModal(deleteCatModal);
+                });
+
+                // 重置弹窗
+                openResetBtn.addEventListener('click', () => openModal(resetModal));
+                cancelResetBtn.addEventListener('click', () => closeModal(resetModal));
+                resetModal.addEventListener('click', (e) => {
+                    if (e.target === resetModal) closeModal(resetModal);
+                });
+                confirmResetBtn.addEventListener('click', () => {
+                    resetToInitial();
+                    closeModal(resetModal);
+                });
+
+                // ESC 键关闭所有弹窗
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        closeModal(addCatModal);
+                        closeModal(deleteCatModal);
+                        closeModal(resetModal);
+                        closeModal(syncSettingsModal);
+                        closeModal(conflictModal);
+                        pendingDeleteCatId = null;
+                    }
+                });
+            }
+
+            /* ==================== 启动初始化 ==================== */
+
+            function init() {
+                loadLocalState();
+                bindEvents();
+                render();
+
+                if (isCloudConfigured()) {
+                    // 页面打开时自动拉取云端最新数据（如果尚无 data.json 则自动创建）
+                    pullFromGitHub({ autoCreateIfMissing: true, silentToast: true });
+                } else {
+                    setSyncStatus('local');
+                }
+            }
+
+            init();
+        })();
+    </script>
+</body>
+</html>
