@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-21T14:12:23.815Z",
+  "updatedAt": "2026-11-21T14:26:57.239Z",
   "categories": [
     {
       "id": "cat_food",
@@ -14,7 +14,7 @@
         {
           "id": "item_2",
           "text": "土豆粉村驴",
-          "completed": false
+          "completed": true
         },
         {
           "id": "item_3",
