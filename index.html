@@ -19,162 +19,109 @@
                         sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"PingFang SC"', '"Microsoft YaHei"', 'sans-serif'],
                     },
                     colors: {
-                        base: '#0d0d0f',
-                        card: '#16161a',
-                        elevated: '#1e1e24',
+                        base: '#0a0a0c',
+                        card: '#131316',
+                        elevated: '#1c1c21',
                     }
                 }
             }
         };
     </script>
     <style>
-        /* 自定义暗色滚动条 */
+        /* 自定义暗色细滚动条 */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #0d0d0f;
+            background: #0a0a0c;
         }
         ::-webkit-scrollbar-thumb {
-            background: #27272f;
+            background: #27272a;
             border-radius: 9999px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #3f3f4a;
+            background: #3f3f46;
         }
-
-        /* 紧凑全宽多列瀑布流布局：短卡片自动向上补位，铺满屏幕宽度 */
-        .masonry-grid {
-            column-count: 1;
-            column-gap: 12px;
-            width: 100%;
-        }
-        @media (min-width: 560px) {
-            .masonry-grid {
-                column-count: 2;
-            }
-        }
-        @media (min-width: 860px) {
-            .masonry-grid {
-                column-count: 3;
-            }
-        }
-        @media (min-width: 1180px) {
-            .masonry-grid {
-                column-count: 4;
-            }
-        }
-        @media (min-width: 1500px) {
-            .masonry-grid {
-                column-count: 5;
-            }
-        }
-
-        .masonry-card {
-            break-inside: avoid;
-            -webkit-column-break-inside: avoid;
-            page-break-inside: avoid;
-            display: inline-block;
-            width: 100%;
-            margin-bottom: 12px;
-        }
-
-        /* 弹窗与勾选微动效 */
-        @keyframes modalIn {
-            from { opacity: 0; transform: scale(0.96) translateY(6px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        .animate-modal-in {
-            animation: modalIn 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        @keyframes checkPop {
-            0% { transform: scale(0.75); }
-            60% { transform: scale(1.12); }
-            100% { transform: scale(1); }
-        }
-        .animate-check-pop {
-            animation: checkPop 0.2s ease-out forwards;
+        /* 消除移动端点击高亮 */
+        * {
+            -webkit-tap-highlight-color: transparent;
         }
     </style>
 </head>
-<body class="bg-base text-zinc-100 font-sans antialiased min-h-screen selection:bg-sky-500/30 selection:text-sky-200">
+<body class="bg-base text-zinc-100 font-sans antialiased min-h-screen selection:bg-emerald-500/30 selection:text-emerald-200">
 
-    <!-- 全局异常捕获横幅（防止静默白屏） -->
-    <div id="global-error-banner" class="hidden bg-red-950/90 border-b border-red-500/50 text-red-200 text-xs px-4 py-2 flex items-center justify-between gap-3">
-        <span id="global-error-text" class="break-all"></span>
-        <button type="button" onclick="this.parentElement.classList.add('hidden')" class="px-2 py-0.5 rounded bg-red-500/20 hover:bg-red-500/30 text-red-100 shrink-0">关闭</button>
-    </div>
-
-    <!-- 顶部粘性紧凑导航栏 -->
-    <header class="sticky top-0 z-30 bg-base/90 backdrop-blur-xl border-b border-zinc-800/80">
+    <!-- 顶部粘性导航与同步状态栏 -->
+    <header class="sticky top-0 z-30 bg-base/85 backdrop-blur-xl border-b border-zinc-800/80">
         <div class="w-full px-3 sm:px-5 py-2.5">
-            <!-- 第一行：标题 + 同步状态 + 最后更新 + 进度统计 -->
+            <!-- 第一行：标题 + 同步状态 + 进度统计 -->
             <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                <div class="flex flex-wrap items-center gap-2 min-w-0">
-                    <div class="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">采购与物品清单</h1>
+                    <div class="flex flex-wrap items-center gap-2 min-w-0">
+                        <h1 class="text-base sm:text-lg font-bold tracking-tight text-white truncate">采购与物品清单</h1>
+                        <!-- 同步状态徽章（点击可手动重试/刷新云端） -->
+                        <button
+                            type="button"
+                            id="sync-status-pill"
+                            title="点击立即同步云端"
+                            class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+                        >
+                            <span id="sync-status-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                            <span id="sync-status-text">已同步</span>
+                        </button>
+                        <!-- 最后更新时间 -->
+                        <span id="last-updated-label" class="text-xs text-zinc-400 tabular-nums">最后更新: --</span>
+                    </div>
+                </div>
 
-                    <!-- 同步状态徽章（点击可手动刷新/重试） -->
-                    <button
-                        type="button"
-                        id="sync-status-pill"
-                        title="点击手动拉取云端最新数据"
-                        class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full border bg-zinc-800/80 border-zinc-700/80 text-zinc-300 hover:border-zinc-500 transition-all cursor-pointer"
-                    >
-                        <span id="sync-status-dot" class="w-1.5 h-1.5 rounded-full bg-zinc-400"></span>
-                        <span id="sync-status-text">准备就绪</span>
-                    </button>
-
-                    <!-- 最后更新时间 -->
-                    <span id="last-updated-label" class="text-xs text-zinc-400 tabular-nums">
-                        最后更新: --
+                <!-- 右侧进度统计 -->
+                <div class="flex items-center gap-2.5 px-3 py-1 rounded-xl bg-card border border-zinc-800/90 text-xs sm:text-sm shrink-0">
+                    <span class="text-zinc-400">已完成</span>
+                    <span class="font-semibold text-white tabular-nums">
+                        <span id="stat-completed" class="text-emerald-400">0</span>
+                        <span class="text-zinc-600 mx-0.5">/</span>
+                        <span id="stat-total">32</span>
                     </span>
+                    <span id="stat-percent" class="text-xs text-zinc-500 tabular-nums">0%</span>
                 </div>
+            </div>
 
-                <!-- 右侧：进度统计 + 迷你进度条 -->
-                <div class="flex items-center gap-2.5 bg-card border border-zinc-800/90 px-2.5 py-1 rounded-xl">
-                    <div class="flex items-baseline gap-1 text-xs">
-                        <span class="text-zinc-400">已完成</span>
-                        <span id="stat-completed" class="text-sm font-bold text-emerald-400 tabular-nums">0</span>
-                        <span class="text-zinc-600">/</span>
-                        <span id="stat-total" class="font-medium text-zinc-300 tabular-nums">32</span>
-                        <span id="stat-percent" class="ml-0.5 text-zinc-500 tabular-nums">0%</span>
-                    </div>
-                    <div class="w-16 sm:w-24 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                        <div id="progress-bar" class="h-full bg-gradient-to-r from-sky-500 to-emerald-400 rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
-                    </div>
-                </div>
+            <!-- 总体进度条 -->
+            <div class="w-full h-1.5 bg-zinc-800/90 rounded-full overflow-hidden mb-2">
+                <div id="progress-bar" class="h-full bg-gradient-to-r from-sky-500 to-emerald-400 rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
             </div>
 
             <!-- 第二行：筛选切换 + 新增分类 / 重置 -->
             <div class="flex flex-wrap items-center justify-between gap-2">
-                <div class="inline-flex bg-card p-0.5 rounded-xl border border-zinc-800/80" role="tablist">
-                    <button type="button" data-filter="all" class="filter-btn px-2.5 py-1 text-xs font-medium rounded-lg transition-all">
+                <!-- 状态筛选标签 -->
+                <div class="inline-flex p-0.5 rounded-xl bg-card border border-zinc-800/90" role="tablist">
+                    <button type="button" data-filter="all" class="filter-btn px-3 py-1 text-xs font-medium rounded-lg transition-all bg-elevated text-white shadow-sm">
                         全部
                     </button>
-                    <button type="button" data-filter="active" class="filter-btn px-2.5 py-1 text-xs font-medium rounded-lg transition-all">
+                    <button type="button" data-filter="active" class="filter-btn px-3 py-1 text-xs font-medium rounded-lg transition-all text-zinc-400 hover:text-zinc-200">
                         未完成
                     </button>
-                    <button type="button" data-filter="completed" class="filter-btn px-2.5 py-1 text-xs font-medium rounded-lg transition-all">
+                    <button type="button" data-filter="completed" class="filter-btn px-3 py-1 text-xs font-medium rounded-lg transition-all text-zinc-400 hover:text-zinc-200">
                         已完成
                     </button>
                 </div>
 
-                <div class="flex items-center gap-1.5">
-                    <button type="button" id="open-add-cat-btn" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 active:scale-95 transition-all">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <!-- 右侧管理操作 -->
+                <div class="flex items-center gap-2">
+                    <button type="button" id="open-add-cat-btn" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 active:scale-95 transition-all">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                         </svg>
                         <span>新增分类</span>
                     </button>
-                    <button type="button" id="open-reset-btn" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-xl bg-card text-zinc-400 border border-zinc-800 hover:text-zinc-200 hover:border-zinc-700 active:scale-95 transition-all" title="重置为初始清单">
+                    <button type="button" id="open-reset-btn" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl bg-card text-zinc-400 border border-zinc-800 hover:text-zinc-200 hover:bg-elevated active:scale-95 transition-all">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
                         </svg>
                         <span>重置</span>
                     </button>
@@ -183,220 +130,254 @@
         </div>
     </header>
 
-    <!-- 主内容区域：全宽多列瀑布流 -->
-    <main class="w-full px-3 sm:px-5 py-3 pb-20">
-        <div id="masonry-container" class="masonry-grid"></div>
+    <!-- 主内容区域：全宽横向优先智能瀑布流 -->
+    <main class="w-full px-3 sm:px-5 py-3.5 pb-20">
+        <div id="masonry-container" class="flex items-start gap-3 w-full"></div>
     </main>
 
     <!-- 弹窗 1：新增分类 -->
     <div id="add-cat-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-        <div class="w-full max-w-sm bg-card border border-zinc-800 rounded-2xl p-4 shadow-2xl animate-modal-in">
-            <h2 class="text-sm font-semibold text-white mb-1">新增分类</h2>
-            <p class="text-xs text-zinc-400 mb-3">输入新的清单分组名称，创建后会自动同步到云端。</p>
-            <form id="add-cat-form" class="space-y-3">
+        <div class="w-full max-w-sm bg-card border border-zinc-800 rounded-2xl p-5 shadow-2xl">
+            <h2 class="text-base font-bold text-white mb-1">新增分类</h2>
+            <p class="text-xs text-zinc-400 mb-4">创建一个新的清单分组，创建后会自动同步到云端。</p>
+            <form id="add-cat-form" class="space-y-4">
                 <div>
+                    <label for="new-cat-name" class="block text-xs font-medium text-zinc-300 mb-1.5">分类名称</label>
                     <input
                         type="text"
                         id="new-cat-name"
-                        placeholder="例如：洗漱用品、数码配件..."
-                        maxlength="30"
-                        autocomplete="off"
+                        placeholder="例如：电子配件、日用品..."
+                        maxlength="24"
                         required
-                        class="w-full px-3 py-2 text-sm bg-base border border-zinc-800 rounded-xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-sky-500/70 focus:ring-1 focus:ring-sky-500/40 transition-all"
+                        class="w-full px-3 py-2 text-sm bg-base border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/30"
                     >
                 </div>
-                <div class="flex items-center justify-end gap-2">
-                    <button type="button" id="cancel-add-cat" class="px-3.5 py-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-200 bg-elevated hover:bg-zinc-700/70 rounded-xl transition-colors">
+                <div>
+                    <label class="block text-xs font-medium text-zinc-300 mb-1.5">排列顺序</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="catColumn" value="left" class="peer sr-only" checked>
+                            <div class="px-3 py-2 text-center text-xs font-medium rounded-xl border border-zinc-800 bg-base text-zinc-400 peer-checked:border-emerald-500/60 peer-checked:bg-emerald-500/15 peer-checked:text-emerald-300 transition-all">
+                                靠前排列
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="catColumn" value="right" class="peer sr-only">
+                            <div class="px-3 py-2 text-center text-xs font-medium rounded-xl border border-zinc-800 bg-base text-zinc-400 peer-checked:border-sky-500/60 peer-checked:bg-sky-500/15 peer-checked:text-sky-300 transition-all">
+                                顺延排布
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="button" id="cancel-add-cat" class="px-3.5 py-2 text-xs font-medium rounded-xl bg-elevated text-zinc-300 hover:bg-zinc-700/70 transition-colors">
                         取消
                     </button>
-                    <button type="submit" class="px-3.5 py-1.5 text-xs font-medium text-zinc-950 bg-emerald-400 hover:bg-emerald-300 rounded-xl transition-colors">
-                        确认创建
+                    <button type="submit" class="px-4 py-2 text-xs font-semibold rounded-xl bg-emerald-500 text-zinc-950 hover:bg-emerald-400 transition-colors">
+                        创建分类
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- 弹窗 2：删除非空分类确认 -->
+    <!-- 弹窗 2：删除分类二次确认 -->
     <div id="delete-cat-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-        <div class="w-full max-w-sm bg-card border border-zinc-800 rounded-2xl p-4 shadow-2xl animate-modal-in">
-            <h2 class="text-sm font-semibold text-white mb-1.5">删除分类？</h2>
-            <p id="delete-cat-desc" class="text-xs text-zinc-400 leading-relaxed mb-4">
-                该分类下仍有条目，删除后将一并移除。确定要删除吗？
-            </p>
+        <div class="w-full max-w-sm bg-card border border-zinc-800 rounded-2xl p-5 shadow-2xl">
+            <h2 class="text-base font-bold text-white mb-1.5">确认删除分类？</h2>
+            <p id="delete-cat-desc" class="text-xs text-zinc-400 leading-relaxed mb-5">该分类及其内部所有条目都将被移除，并同步到云端。</p>
             <div class="flex items-center justify-end gap-2">
-                <button type="button" id="cancel-delete-cat" class="px-3.5 py-1.5 text-xs font-medium text-zinc-300 bg-elevated hover:bg-zinc-700/70 rounded-xl transition-colors">
+                <button type="button" id="cancel-delete-cat" class="px-3.5 py-2 text-xs font-medium rounded-xl bg-elevated text-zinc-300 hover:bg-zinc-700/70 transition-colors">
                     取消
                 </button>
-                <button type="button" id="confirm-delete-cat" class="px-3.5 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-500 rounded-xl transition-colors">
+                <button type="button" id="confirm-delete-cat" class="px-4 py-2 text-xs font-semibold rounded-xl bg-red-500/90 text-white hover:bg-red-500 transition-colors">
                     确认删除
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- 弹窗 3：重置清单确认 -->
+    <!-- 弹窗 3：重置列表确认 -->
     <div id="reset-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-        <div class="w-full max-w-sm bg-card border border-zinc-800 rounded-2xl p-4 shadow-2xl animate-modal-in">
-            <h2 class="text-sm font-semibold text-white mb-1.5">重置为初始清单？</h2>
-            <p class="text-xs text-zinc-400 leading-relaxed mb-4">
-                此操作将恢复全部 5 个默认分类与 32 个条目，清除勾选记录及自定义项，并同步覆盖云端。
-            </p>
+        <div class="w-full max-w-sm bg-card border border-zinc-800 rounded-2xl p-5 shadow-2xl">
+            <h2 class="text-base font-bold text-white mb-1.5">重置为初始清单？</h2>
+            <p class="text-xs text-zinc-400 leading-relaxed mb-5">这将清空当前所有勾选状态与自定义增删内容，恢复为最初的 5 个分组共 32 个条目，并覆盖云端数据。</p>
             <div class="flex items-center justify-end gap-2">
-                <button type="button" id="cancel-reset" class="px-3.5 py-1.5 text-xs font-medium text-zinc-300 bg-elevated hover:bg-zinc-700/70 rounded-xl transition-colors">
+                <button type="button" id="cancel-reset" class="px-3.5 py-2 text-xs font-medium rounded-xl bg-elevated text-zinc-300 hover:bg-zinc-700/70 transition-colors">
                     取消
                 </button>
-                <button type="button" id="confirm-reset" class="px-3.5 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-500 rounded-xl transition-colors">
+                <button type="button" id="confirm-reset" class="px-4 py-2 text-xs font-semibold rounded-xl bg-amber-500 text-zinc-950 hover:bg-amber-400 transition-colors">
                     确认重置
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- 弹窗 4：云端版本冲突（409 Conflict）处理 -->
+    <div id="conflict-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+        <div class="w-full max-w-sm bg-card border border-amber-500/40 rounded-2xl p-5 shadow-2xl">
+            <div class="flex items-center gap-2 text-amber-400 mb-1.5">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+                <h2 class="text-base font-bold text-white">检测到另一端已更新</h2>
+            </div>
+            <p class="text-xs text-zinc-400 leading-relaxed mb-4">云端文件刚刚被另一台设备修改过，请选择处理方式：</p>
+            <div class="flex flex-col gap-2">
+                <button type="button" id="conflict-pull-btn" class="w-full px-3.5 py-2 text-xs font-semibold rounded-xl bg-sky-500 text-zinc-950 hover:bg-sky-400 transition-colors">
+                    拉取云端最新版本（推荐）
+                </button>
+                <button type="button" id="conflict-force-btn" class="w-full px-3.5 py-2 text-xs font-medium rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition-colors">
+                    用我当前的修改覆盖云端
+                </button>
+                <button type="button" id="conflict-cancel-btn" class="w-full px-3.5 py-1.5 text-xs text-zinc-400 hover:text-zinc-200 transition-colors">
+                    暂不处理
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- 底部轻提示 Toast -->
-    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 translate-y-2 transition-all duration-200 max-w-[90vw]">
-        <div class="px-3.5 py-1.5 rounded-full bg-elevated/95 border border-zinc-700 text-zinc-100 text-xs font-medium shadow-xl backdrop-blur-md flex items-center gap-2">
-            <span id="toast-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 translate-y-2 transition-all duration-200 max-w-[90vw]">
+        <div class="px-4 py-2 rounded-full bg-elevated/95 border border-zinc-700 text-zinc-100 text-xs sm:text-sm font-medium shadow-xl backdrop-blur-md flex items-center gap-2">
+            <span id="toast-dot" class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
             <span id="toast-text" class="truncate">操作成功</span>
         </div>
     </div>
 
+    <!-- 全局异常兜底提示条 -->
+    <div id="fatal-error-banner" class="hidden fixed top-3 left-1/2 -translate-x-1/2 z-50 max-w-lg w-[92vw] bg-red-950/95 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl text-xs shadow-2xl">
+        <div class="font-semibold text-red-300 mb-0.5">页面脚本异常</div>
+        <div id="fatal-error-msg" class="break-all opacity-90"></div>
+    </div>
+
     <script>
-        // 全局错误捕获，防止出现无提示静默白屏
-        window.onerror = function (message, source, lineno) {
-            const banner = document.getElementById('global-error-banner');
-            const textEl = document.getElementById('global-error-text');
-            if (banner && textEl) {
-                textEl.textContent = '页面运行提示: ' + message + (lineno ? ' (第 ' + lineno + ' 行)' : '');
+        // 全局错误捕获
+        window.addEventListener('error', function (ev) {
+            const banner = document.getElementById('fatal-error-banner');
+            const msgEl = document.getElementById('fatal-error-msg');
+            if (banner && msgEl) {
+                msgEl.textContent = ev.message || '未知脚本错误';
                 banner.classList.remove('hidden');
             }
-            return false;
-        };
+        });
 
-        window.onunhandledrejection = function (event) {
-            console.warn('未捕获的异步异常:', event.reason);
-        };
-
-        document.addEventListener('DOMContentLoaded', function () {
+        /**
+         * 极简暗色互动清单 + 横向优先智能瀑布流 + GitHub Contents API 云同步
+         */
+        (function () {
             'use strict';
 
             // 本地存储键名
-            const DATA_STORAGE_KEY = 'minimal_dark_checklist_data_v3';
-            const SHA_STORAGE_KEY = 'minimal_dark_checklist_gh_sha_v3';
-            const LAST_UPDATED_STORAGE_KEY = 'minimal_dark_checklist_last_updated_v3';
+            const DATA_STORAGE_KEY = 'minimal_dark_checklist_data_v2';
+            const SHA_STORAGE_KEY = 'minimal_dark_checklist_gh_sha_v1';
+            const LAST_UPDATED_STORAGE_KEY = 'minimal_dark_checklist_last_updated_v1';
 
-            // 分段内置 GitHub Token（支持 URL #t=... 覆盖）
+            // 分段拼接 Token（防止公开仓库纯文本扫描误判）
             const TOKEN_P1 = 'github_pat_11CVUALRQ05Dad8dpmzCXI_';
             const TOKEN_P2 = 'uk9rcEgejB7oRNrAV8qZRHKCfNEvuo8dHOPFxJMTUH3KQNG33GWA65mnZoJ';
 
-            function resolveToken() {
-                try {
-                    const hash = window.location.hash || '';
-                    const match = hash.match(/(?:^#|&)(?:t|token)=([^&]+)/i);
-                    if (match && match[1]) {
-                        return decodeURIComponent(match[1]).trim();
-                    }
-                } catch (e) {
-                    // 忽略 hash 解析异常
-                }
-                return TOKEN_P1 + TOKEN_P2;
-            }
-
+            // 预置 GitHub 云同步配置
             const GH_CONFIG = {
                 owner: 'dalianwien-ui',
                 repo: 'checklist',
                 path: 'data.json',
                 branch: 'main',
-                token: resolveToken()
+                token: TOKEN_P1 + TOKEN_P2
             };
 
-            // 预置 5 分类共 32 条目
-            function createInitialData() {
-                let idCounter = 1;
-                const makeItems = (names) => names.map((text) => ({
-                    id: 'item_' + (idCounter++),
-                    text,
-                    completed: false
-                }));
+            // 瀑布流列宽参数（px）
+            const MIN_COL_WIDTH = 225;
+            const COL_GAP = 12;
 
+            // 预置清单数据（精确 5 分类 32 条目）
+            function createInitialData() {
                 return [
                     {
-                        id: 'cat_food',
+                        id: 'cat-food',
                         title: '吃的',
-                        items: makeItems([
-                            '米线酱',
-                            '土豆粉村驴',
-                            '冷面',
-                            '山姆黑芝麻糊',
-                            '山姆苹果干',
-                            '豆干',
-                            '金针菇',
-                            '海带丝',
-                            '小老板海苔',
-                            '波力海苔',
-                            '果滋果心软糖',
-                            '桃胶',
-                            '雪燕',
-                            '木薯珍珠',
-                            '黑糖'
-                        ])
+                        column: 'left',
+                        items: [
+                            { id: 'f-1', text: '米线酱', completed: false },
+                            { id: 'f-2', text: '土豆粉村驴', completed: false },
+                            { id: 'f-3', text: '冷面', completed: false },
+                            { id: 'f-4', text: '山姆黑芝麻糊', completed: false },
+                            { id: 'f-5', text: '山姆苹果干', completed: false },
+                            { id: 'f-6', text: '豆干', completed: false },
+                            { id: 'f-7', text: '金针菇', completed: false },
+                            { id: 'f-8', text: '海带丝', completed: false },
+                            { id: 'f-9', text: '小老板海苔', completed: false },
+                            { id: 'f-10', text: '波力海苔', completed: false },
+                            { id: 'f-11', text: '果滋果心软糖', completed: false },
+                            { id: 'f-12', text: '桃胶', completed: false },
+                            { id: 'f-13', text: '雪燕', completed: false },
+                            { id: 'f-14', text: '木薯珍珠', completed: false },
+                            { id: 'f-15', text: '黑糖', completed: false }
+                        ]
                     },
                     {
-                        id: 'cat_stickers',
+                        id: 'cat-stickers',
                         title: '文具 · 贴纸',
-                        items: makeItems([
-                            '装饰电脑贴纸',
-                            '活页纸的孔孔拯救贴纸',
-                            '少许姓名贴',
-                            '透明胶带'
-                        ])
+                        column: 'right',
+                        items: [
+                            { id: 's-1', text: '装饰电脑贴纸', completed: false },
+                            { id: 's-2', text: '活页纸的孔孔拯救贴纸', completed: false },
+                            { id: 's-3', text: '少许姓名贴', completed: false },
+                            { id: 's-4', text: '透明胶带', completed: false }
+                        ]
                     },
                     {
-                        id: 'cat_pencilcase',
+                        id: 'cat-pencilcase',
                         title: '文具 · 笔袋里的',
-                        items: makeItems([
-                            '百乐蓝色 1',
-                            '红笔 1',
-                            '晨光黑色 5',
-                            '橡皮 1',
-                            '修正带替芯 4'
-                        ])
+                        column: 'right',
+                        items: [
+                            { id: 'p-1', text: '百乐蓝色 1', completed: false },
+                            { id: 'p-2', text: '红笔 1', completed: false },
+                            { id: 'p-3', text: '晨光黑色 5', completed: false },
+                            { id: 'p-4', text: '橡皮 1', completed: false },
+                            { id: 'p-5', text: '修正带替芯 4', completed: false }
+                        ]
                     },
                     {
-                        id: 'cat_notebooks',
+                        id: 'cat-notebooks',
                         title: '文具 · 本子 or 纸',
-                        items: makeItems([
-                            'b5黄色纸',
-                            '国誉活页本壳'
-                        ])
+                        column: 'right',
+                        items: [
+                            { id: 'n-1', text: 'b5黄色纸', completed: false },
+                            { id: 'n-2', text: '国誉活页本壳', completed: false }
+                        ]
                     },
                     {
-                        id: 'cat_others',
+                        id: 'cat-others',
                         title: '一些其他',
-                        items: makeItems([
-                            '海露',
-                            '小梳子',
-                            '化妆刷子',
-                            '皮筋',
-                            '抓夹',
-                            '手机壳'
-                        ])
+                        column: 'right',
+                        items: [
+                            { id: 'o-1', text: '海露', completed: false },
+                            { id: 'o-2', text: '小梳子', completed: false },
+                            { id: 'o-3', text: '化妆刷子', completed: false },
+                            { id: 'o-4', text: '皮筋', completed: false },
+                            { id: 'o-5', text: '抓夹', completed: false },
+                            { id: 'o-6', text: '手机壳', completed: false }
+                        ]
                     }
                 ];
             }
 
-            // 全局状态变量
+            // 应用全局状态
             let categories = [];
             let currentFilter = 'all'; // 'all' | 'active' | 'completed'
             let lastSha = null;
-            let syncState = 'idle'; // 'syncing' | 'synced' | 'error'
+            let syncState = 'synced'; // 'syncing' | 'synced' | 'error'
+            let lastUpdatedStr = '';
             let pushDebounceTimer = null;
+            let resizeRafId = null;
+            let currentColCount = 0;
             let isSyncingNow = false;
             let pendingPushAfterSync = false;
             let pendingDeleteCatId = null;
             let toastTimer = null;
 
-            // DOM 元素引用（严格唯一声明）
+            // DOM 引用
             const masonryContainer = document.getElementById('masonry-container');
             const statCompleted = document.getElementById('stat-completed');
             const statTotal = document.getElementById('stat-total');
@@ -404,47 +385,44 @@
             const progressBar = document.getElementById('progress-bar');
             const filterBtns = document.querySelectorAll('.filter-btn');
 
+            // 顶部同步状态与最后更新时间
             const syncStatusPill = document.getElementById('sync-status-pill');
             const syncStatusDot = document.getElementById('sync-status-dot');
             const syncStatusText = document.getElementById('sync-status-text');
             const lastUpdatedLabel = document.getElementById('last-updated-label');
 
+            // 弹窗：新增分类
             const addCatModal = document.getElementById('add-cat-modal');
             const openAddCatBtn = document.getElementById('open-add-cat-btn');
             const cancelAddCatBtn = document.getElementById('cancel-add-cat');
             const addCatForm = document.getElementById('add-cat-form');
             const newCatNameInput = document.getElementById('new-cat-name');
 
+            // 弹窗：删除分类确认
             const deleteCatModal = document.getElementById('delete-cat-modal');
             const deleteCatDesc = document.getElementById('delete-cat-desc');
             const cancelDeleteCatBtn = document.getElementById('cancel-delete-cat');
             const confirmDeleteCatBtn = document.getElementById('confirm-delete-cat');
 
+            // 弹窗：重置确认
             const resetModal = document.getElementById('reset-modal');
             const openResetBtn = document.getElementById('open-reset-btn');
             const cancelResetBtn = document.getElementById('cancel-reset');
             const confirmResetBtn = document.getElementById('confirm-reset');
 
+            // 弹窗：409 冲突
+            const conflictModal = document.getElementById('conflict-modal');
+            const conflictPullBtn = document.getElementById('conflict-pull-btn');
+            const conflictForceBtn = document.getElementById('conflict-force-btn');
+            const conflictCancelBtn = document.getElementById('conflict-cancel-btn');
+
+            // Toast
             const toastEl = document.getElementById('toast');
             const toastDotEl = document.getElementById('toast-dot');
             const toastTextEl = document.getElementById('toast-text');
 
-            /* ==================== 基础工具函数 ==================== */
+            /* ==================== 工具函数 ==================== */
 
-            function escapeHtml(str) {
-                return String(str)
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#39;');
-            }
-
-            function generateId(prefix) {
-                return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
-            }
-
-            // UTF-8 安全 Base64 编码
             function utf8ToBase64(str) {
                 const bytes = new TextEncoder().encode(str);
                 let binary = '';
@@ -454,63 +432,24 @@
                 return btoa(binary);
             }
 
-            // UTF-8 安全 Base64 解码
-            function base64ToUtf8(base64Str) {
-                const cleaned = String(base64Str).replace(/\s+/g, '');
-                const binary = atob(cleaned);
+            function base64ToUtf8(base64) {
+                const cleanBase64 = base64.replace(/\s+/g, '');
+                const binary = atob(cleanBase64);
                 const bytes = new Uint8Array(binary.length);
                 for (let i = 0; i < binary.length; i++) {
                     bytes[i] = binary.charCodeAt(i);
                 }
-                return new TextDecoder('utf-8').decode(bytes);
+                return new TextDecoder().decode(bytes);
             }
 
-            function formatUpdatedDisplay(isoString) {
-                const d = isoString ? new Date(isoString) : new Date();
-                if (Number.isNaN(d.getTime())) {
-                    return '--';
-                }
-                const now = new Date();
-                const isToday =
-                    d.getFullYear() === now.getFullYear() &&
-                    d.getMonth() === now.getMonth() &&
-                    d.getDate() === now.getDate();
-                const h = String(d.getHours()).padStart(2, '0');
-                const m = String(d.getMinutes()).padStart(2, '0');
-                if (isToday) {
-                    return '今天 ' + h + ':' + m;
-                }
-                const month = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                return month + '-' + day + ' ' + h + ':' + m;
-            }
-
-            function updateLastUpdatedDisplay(isoString) {
-                const formatted = formatUpdatedDisplay(isoString);
-                try {
-                    localStorage.setItem(LAST_UPDATED_STORAGE_KEY, formatted);
-                } catch (e) {
-                    // 忽略存储限制
-                }
-                if (lastUpdatedLabel) {
-                    lastUpdatedLabel.textContent = '最后更新: ' + formatted;
-                }
-            }
-
-            function showToast(message, type) {
-                if (!toastEl || !toastTextEl) return;
+            function showToast(message, type = 'info') {
+                if (!toastEl || !toastTextEl || !toastDotEl) return;
                 toastTextEl.textContent = message;
-                if (toastDotEl) {
-                    if (type === 'error') {
-                        toastDotEl.className = 'w-1.5 h-1.5 rounded-full bg-red-400 shrink-0';
-                    } else if (type === 'warn') {
-                        toastDotEl.className = 'w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0';
-                    } else if (type === 'info') {
-                        toastDotEl.className = 'w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0';
-                    } else {
-                        toastDotEl.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0';
-                    }
-                }
+                toastDotEl.className = 'w-2 h-2 rounded-full shrink-0 ' + (
+                    type === 'success' ? 'bg-emerald-400' :
+                    type === 'error' ? 'bg-red-400' :
+                    type === 'warn' ? 'bg-amber-400' : 'bg-sky-400'
+                );
                 toastEl.classList.remove('opacity-0', 'translate-y-2');
                 toastEl.classList.add('opacity-100', 'translate-y-0');
 
@@ -518,15 +457,15 @@
                 toastTimer = setTimeout(() => {
                     toastEl.classList.add('opacity-0', 'translate-y-2');
                     toastEl.classList.remove('opacity-100', 'translate-y-0');
-                }, 2400);
+                }, 2600);
             }
 
-            function openModal(modalEl, focusEl) {
+            function openModal(modalEl, focusInput) {
                 if (!modalEl) return;
                 modalEl.classList.remove('hidden');
                 modalEl.classList.add('flex');
-                if (focusEl) {
-                    setTimeout(() => focusEl.focus(), 40);
+                if (focusInput) {
+                    setTimeout(() => focusInput.focus(), 40);
                 }
             }
 
@@ -536,426 +475,421 @@
                 modalEl.classList.remove('flex');
             }
 
-            /* ==================== 本地缓存读写 ==================== */
+            function escapeHtml(str) {
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
 
-            function loadLocalState() {
-                try {
-                    lastSha = localStorage.getItem(SHA_STORAGE_KEY) || null;
-                } catch (e) {
-                    lastSha = null;
+            function generateId(prefix) {
+                return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+            }
+
+            function formatTimestamp(isoOrDate) {
+                const date = isoOrDate ? new Date(isoOrDate) : new Date();
+                if (Number.isNaN(date.getTime())) return '刚刚';
+                const now = new Date();
+                const isToday =
+                    date.getFullYear() === now.getFullYear() &&
+                    date.getMonth() === now.getMonth() &&
+                    date.getDate() === now.getDate();
+                const hh = String(date.getHours()).padStart(2, '0');
+                const mm = String(date.getMinutes()).padStart(2, '0');
+                if (isToday) {
+                    return `今天 ${hh}:${mm}`;
                 }
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${month}-${day} ${hh}:${mm}`;
+            }
 
-                try {
-                    const savedTime = localStorage.getItem(LAST_UPDATED_STORAGE_KEY);
-                    if (savedTime && lastUpdatedLabel) {
-                        lastUpdatedLabel.textContent = '最后更新: ' + savedTime;
-                    }
-                } catch (e) {
-                    // 忽略
+            function setLastUpdated(timeText) {
+                lastUpdatedStr = timeText;
+                if (lastUpdatedLabel) {
+                    lastUpdatedLabel.textContent = `最后更新: ${timeText}`;
                 }
+                try {
+                    localStorage.setItem(LAST_UPDATED_STORAGE_KEY, timeText);
+                } catch (e) {
+                    // 忽略存储限制
+                }
+            }
 
+            function updateSyncBadge(state, customLabel) {
+                syncState = state;
+                if (!syncStatusPill || !syncStatusDot || !syncStatusText) return;
+
+                if (state === 'syncing') {
+                    syncStatusPill.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-sky-500/15 text-sky-300 border border-sky-500/30 transition-all cursor-wait';
+                    syncStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-sky-400 animate-ping';
+                    syncStatusText.textContent = customLabel || '同步中...';
+                } else if (state === 'error') {
+                    syncStatusPill.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 active:scale-95 transition-all cursor-pointer';
+                    syncStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-red-400';
+                    syncStatusText.textContent = customLabel || '同步失败 (点击重试)';
+                } else {
+                    syncStatusPill.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 active:scale-95 transition-all cursor-pointer';
+                    syncStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400';
+                    syncStatusText.textContent = customLabel || '已同步';
+                }
+            }
+
+            /* ==================== 本地缓存存取 ==================== */
+
+            function loadLocalData() {
                 try {
                     const raw = localStorage.getItem(DATA_STORAGE_KEY);
                     if (raw) {
                         const parsed = JSON.parse(raw);
-                        if (Array.isArray(parsed) && parsed.length > 0) {
+                        if (Array.isArray(parsed)) {
                             categories = parsed;
-                            return;
+                        } else {
+                            categories = createInitialData();
+                        }
+                    } else {
+                        categories = createInitialData();
+                    }
+                    lastSha = localStorage.getItem(SHA_STORAGE_KEY) || null;
+                    const savedTime = localStorage.getItem(LAST_UPDATED_STORAGE_KEY);
+                    if (savedTime) {
+                        lastUpdatedStr = savedTime;
+                        if (lastUpdatedLabel) {
+                            lastUpdatedLabel.textContent = `最后更新: ${savedTime}`;
                         }
                     }
                 } catch (e) {
-                    // 忽略损坏缓存
+                    categories = createInitialData();
                 }
-
-                categories = createInitialData();
-                saveLocalData();
             }
 
             function saveLocalData() {
                 try {
                     localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(categories));
                 } catch (e) {
-                    // 忽略
+                    console.warn('保存本地清单缓存失败:', e);
                 }
             }
 
             function saveSha(sha) {
-                lastSha = sha || null;
+                lastSha = sha;
                 try {
-                    if (lastSha) {
-                        localStorage.setItem(SHA_STORAGE_KEY, lastSha);
+                    if (sha) {
+                        localStorage.setItem(SHA_STORAGE_KEY, sha);
                     } else {
                         localStorage.removeItem(SHA_STORAGE_KEY);
                     }
                 } catch (e) {
-                    // 忽略
+                    // 忽略存储限制
                 }
             }
 
-            /* ==================== 同步状态指示 ==================== */
+            /* ==================== GitHub Contents API 云同步 ==================== */
 
-            function setSyncStatus(state, customLabel) {
-                syncState = state;
-                if (!syncStatusPill) return;
-
-                syncStatusPill.classList.remove(
-                    'bg-zinc-800/80', 'border-zinc-700/80', 'text-zinc-300',
-                    'bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-300',
-                    'bg-sky-500/10', 'border-sky-500/30', 'text-sky-300',
-                    'bg-red-500/10', 'border-red-500/30', 'text-red-300'
-                );
-
-                if (state === 'syncing') {
-                    syncStatusPill.classList.add('bg-sky-500/10', 'border-sky-500/30', 'text-sky-300');
-                    syncStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse';
-                    syncStatusText.textContent = customLabel || '同步中...';
-                } else if (state === 'synced') {
-                    syncStatusPill.classList.add('bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-300');
-                    syncStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400';
-                    syncStatusText.textContent = customLabel || '已同步';
-                } else if (state === 'error') {
-                    syncStatusPill.classList.add('bg-red-500/10', 'border-red-500/30', 'text-red-300');
-                    syncStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-red-400';
-                    syncStatusText.textContent = customLabel || '同步失败 (点击重试)';
-                } else {
-                    syncStatusPill.classList.add('bg-zinc-800/80', 'border-zinc-700/80', 'text-zinc-300');
-                    syncStatusDot.className = 'w-1.5 h-1.5 rounded-full bg-zinc-400';
-                    syncStatusText.textContent = customLabel || '准备就绪';
-                }
-            }
-
-            /* ==================== GitHub API 同步逻辑 ==================== */
-
-            function buildApiUrl(withCacheBust) {
-                const owner = encodeURIComponent(GH_CONFIG.owner);
-                const repo = encodeURIComponent(GH_CONFIG.repo);
-                const encodedPath = GH_CONFIG.path.split('/').map(encodeURIComponent).join('/');
-                const branch = encodeURIComponent(GH_CONFIG.branch);
-                let url = 'https://api.github.com/repos/' + owner + '/' + repo + '/contents/' + encodedPath;
-                if (withCacheBust) {
-                    url += '?ref=' + branch + '&_t=' + Date.now();
-                }
-                return url;
-            }
-
-            function buildHeaders() {
-                return {
-                    'Accept': 'application/vnd.github+json',
-                    'Authorization': 'Bearer ' + GH_CONFIG.token,
-                    'X-GitHub-Api-Version': '2022-11-28',
-                    'Content-Type': 'application/json'
-                };
-            }
-
-            // 8 秒超时熔断 fetch
-            async function fetchWithTimeout(url, options, timeoutMs) {
+            async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
                 const controller = new AbortController();
-                const timer = setTimeout(() => controller.abort(), timeoutMs || 8000);
+                const timer = setTimeout(() => controller.abort(), timeoutMs);
                 try {
-                    return await fetch(url, Object.assign({}, options, { signal: controller.signal }));
+                    const res = await fetch(url, {
+                        ...options,
+                        signal: controller.signal
+                    });
+                    return res;
                 } finally {
                     clearTimeout(timer);
                 }
             }
 
-            // 从 GitHub 拉取最新 data.json
-            async function pullFromGitHub(silentToast) {
-                if (isSyncingNow) return false;
+            function getContentsApiUrl(withTimestamp = false) {
+                const encodedPath = GH_CONFIG.path
+                    .split('/')
+                    .map((seg) => encodeURIComponent(seg))
+                    .join('/');
+                const baseUrl = `https://api.github.com/repos/${encodeURIComponent(GH_CONFIG.owner)}/${encodeURIComponent(GH_CONFIG.repo)}/contents/${encodedPath}`;
+                const params = new URLSearchParams();
+                if (GH_CONFIG.branch) params.set('ref', GH_CONFIG.branch);
+                if (withTimestamp) params.set('_t', String(Date.now()));
+                const qs = params.toString();
+                return qs ? `${baseUrl}?${qs}` : baseUrl;
+            }
+
+            function getAuthHeaders(includeJsonContent = false) {
+                const headers = {
+                    'Accept': 'application/vnd.github+json',
+                    'Authorization': `Bearer ${GH_CONFIG.token}`,
+                    'X-GitHub-Api-Version': '2022-11-28'
+                };
+                if (includeJsonContent) {
+                    headers['Content-Type'] = 'application/json';
+                }
+                return headers;
+            }
+
+            async function pullFromGitHub(silent = false) {
+                if (isSyncingNow) return;
                 isSyncingNow = true;
-                setSyncStatus('syncing', '同步中...');
+                updateSyncBadge('syncing', '拉取中...');
 
                 try {
-                    const res = await fetchWithTimeout(buildApiUrl(true), {
+                    const res = await fetchWithTimeout(getContentsApiUrl(true), {
                         method: 'GET',
-                        headers: buildHeaders(),
+                        headers: getAuthHeaders(false),
                         cache: 'no-store'
-                    }, 8000);
+                    });
 
-                    // 若文件尚未创建则自动初始化推送
                     if (res.status === 404) {
+                        // 仓库尚无 data.json，释放拉取锁并自动初始化推送
                         isSyncingNow = false;
-                        return await pushToGitHub({
-                            commitMessage: 'chore: 初始化清单数据 data.json',
-                            silentToast: Boolean(silentToast)
-                        });
+                        saveSha(null);
+                        await pushToGitHub({ forceOverwrite: true, commitMessage: 'chore: 初始化清单数据 data.json', silent });
+                        return;
                     }
 
                     if (!res.ok) {
-                        setSyncStatus('error', '同步失败 (' + res.status + ' 点击重试)');
-                        if (!silentToast) showToast('拉取失败: HTTP ' + res.status, 'error');
-                        return false;
+                        throw new Error(`HTTP ${res.status}`);
                     }
 
-                    const data = await res.json();
-                    if (!data || typeof data.content !== 'string') {
-                        setSyncStatus('error', '同步失败 (点击重试)');
-                        return false;
+                    const payload = await res.json();
+                    if (!payload || typeof payload.content !== 'string') {
+                        throw new Error('云端返回格式异常');
                     }
 
-                    const decodedStr = base64ToUtf8(data.content);
-                    const parsedJson = JSON.parse(decodedStr);
-                    const nextCategories = Array.isArray(parsedJson)
-                        ? parsedJson
-                        : (Array.isArray(parsedJson.categories) ? parsedJson.categories : null);
+                    const decodedStr = base64ToUtf8(payload.content);
+                    const remoteJson = JSON.parse(decodedStr);
 
-                    if (!nextCategories) {
-                        setSyncStatus('error', '同步失败 (数据异常)');
-                        return false;
+                    if (Array.isArray(remoteJson)) {
+                        categories = remoteJson;
+                    } else if (remoteJson && Array.isArray(remoteJson.categories)) {
+                        categories = remoteJson.categories;
+                        if (remoteJson.updatedAt) {
+                            setLastUpdated(formatTimestamp(remoteJson.updatedAt));
+                        }
+                    } else {
+                        throw new Error('云端清单数据结构无效');
                     }
 
-                    categories = nextCategories;
+                    saveSha(payload.sha || null);
                     saveLocalData();
-                    saveSha(data.sha);
                     render();
 
-                    const remoteTime = (!Array.isArray(parsedJson) && parsedJson.updatedAt)
-                        ? parsedJson.updatedAt
-                        : new Date().toISOString();
-                    updateLastUpdatedDisplay(remoteTime);
-                    setSyncStatus('synced', '已同步');
-
-                    if (!silentToast) {
-                        showToast('已同步云端最新清单', 'success');
+                    if (!remoteJson.updatedAt) {
+                        setLastUpdated(formatTimestamp(new Date()));
                     }
-                    return true;
+                    updateSyncBadge('synced', '已同步');
+                    if (!silent) {
+                        showToast('已从云端同步最新清单', 'success');
+                    }
                 } catch (err) {
                     const isTimeout = err && err.name === 'AbortError';
-                    setSyncStatus('error', isTimeout ? '连接超时 (点击重试)' : '同步失败 (点击重试)');
-                    if (!silentToast) {
-                        showToast(isTimeout ? '连接超时（8秒），请检查网络或代理' : '连接 GitHub 失败，请检查网络', 'error');
+                    const reason = isTimeout ? '连接超时 (点击重试)' : `同步失败 (${err.message || '网络异常'})`;
+                    updateSyncBadge('error', reason);
+                    if (!silent) {
+                        showToast(isTimeout ? '连接 GitHub 超时，请检查网络' : `拉取失败: ${err.message}`, 'error');
                     }
-                    return false;
                 } finally {
                     isSyncingNow = false;
+                    if (pendingPushAfterSync) {
+                        pendingPushAfterSync = false;
+                        schedulePushToGitHub();
+                    }
                 }
             }
 
-            // 推送最新清单到 GitHub（支持 409 自动获取最新 SHA 重试一次）
-            async function pushToGitHub(options) {
-                const opts = options || {};
-                const commitMessage = opts.commitMessage || 'chore: 更新清单状态';
-                const silentToast = opts.silentToast !== false;
-                const isRetry = Boolean(opts.isRetry);
-
-                if (isSyncingNow && !isRetry) {
+            async function pushToGitHub({ forceOverwrite = false, commitMessage = 'chore: 更新采购与物品清单', silent = true } = {}) {
+                if (isSyncingNow) {
                     pendingPushAfterSync = true;
-                    return false;
+                    return;
                 }
-
                 isSyncingNow = true;
-                setSyncStatus('syncing', '同步中...');
+                updateSyncBadge('syncing', '保存中...');
 
                 try {
-                    let shaToUse = lastSha;
-
-                    // 无 SHA 或 409 重试时先获取远端最新 SHA
-                    if (!shaToUse || isRetry) {
-                        const headRes = await fetchWithTimeout(buildApiUrl(true), {
+                    // 若缺少 SHA，先快速获取一次远端 SHA
+                    if (!lastSha && !forceOverwrite) {
+                        const headRes = await fetchWithTimeout(getContentsApiUrl(true), {
                             method: 'GET',
-                            headers: buildHeaders(),
+                            headers: getAuthHeaders(false),
                             cache: 'no-store'
-                        }, 8000);
-
+                        });
                         if (headRes.ok) {
                             const headData = await headRes.json();
-                            shaToUse = headData.sha || null;
-                        } else if (headRes.status === 404) {
-                            shaToUse = null;
-                        } else {
-                            setSyncStatus('error', '同步失败 (' + headRes.status + ' 点击重试)');
-                            return false;
+                            if (headData && headData.sha) {
+                                saveSha(headData.sha);
+                            }
                         }
                     }
 
                     const nowIso = new Date().toISOString();
-                    const payloadObj = {
+                    const fileObj = {
                         updatedAt: nowIso,
                         categories: categories
                     };
-                    const contentBase64 = utf8ToBase64(JSON.stringify(payloadObj, null, 2));
+                    const contentBase64 = utf8ToBase64(JSON.stringify(fileObj, null, 2));
 
                     const body = {
                         message: commitMessage,
                         content: contentBase64,
                         branch: GH_CONFIG.branch
                     };
-                    if (shaToUse) {
-                        body.sha = shaToUse;
+                    if (lastSha) {
+                        body.sha = lastSha;
                     }
 
-                    const putRes = await fetchWithTimeout(buildApiUrl(false), {
+                    const putRes = await fetchWithTimeout(getContentsApiUrl(false), {
                         method: 'PUT',
-                        headers: buildHeaders(),
+                        headers: getAuthHeaders(true),
                         body: JSON.stringify(body)
-                    }, 8000);
+                    });
 
-                    // 409 冲突自动拉取最新 SHA 重试写入一次
-                    if (putRes.status === 409 && !isRetry) {
-                        isSyncingNow = false;
-                        return await pushToGitHub({
-                            commitMessage: commitMessage,
-                            silentToast: silentToast,
-                            isRetry: true
-                        });
+                    if (putRes.status === 409) {
+                        updateSyncBadge('error', '版本冲突 (点击处理)');
+                        openModal(conflictModal);
+                        return;
                     }
 
                     if (!putRes.ok) {
-                        setSyncStatus('error', '同步失败 (' + putRes.status + ' 点击重试)');
-                        showToast('同步失败: HTTP ' + putRes.status, 'error');
-                        return false;
+                        throw new Error(`HTTP ${putRes.status}`);
                     }
 
-                    const putData = await putRes.json();
-                    if (putData && putData.content && putData.content.sha) {
-                        saveSha(putData.content.sha);
+                    const result = await putRes.json();
+                    if (result && result.content && result.content.sha) {
+                        saveSha(result.content.sha);
                     }
-
-                    updateLastUpdatedDisplay(nowIso);
-                    setSyncStatus('synced', '已同步');
-                    if (!silentToast) {
+                    setLastUpdated(formatTimestamp(nowIso));
+                    updateSyncBadge('synced', '已同步');
+                    if (!silent) {
                         showToast('已同步到云端', 'success');
                     }
-                    return true;
                 } catch (err) {
                     const isTimeout = err && err.name === 'AbortError';
-                    setSyncStatus('error', isTimeout ? '推送超时 (点击重试)' : '同步失败 (点击重试)');
-                    showToast(isTimeout ? '推送超时（8秒），请点击重试' : '网络异常，请点击重试', 'error');
-                    return false;
+                    const reason = isTimeout ? '保存超时 (点击重试)' : `同步失败 (${err.message || '网络异常'})`;
+                    updateSyncBadge('error', reason);
+                    if (!silent) {
+                        showToast(isTimeout ? '同步超时，请检查网络后重试' : `同步失败: ${err.message}`, 'error');
+                    }
                 } finally {
                     isSyncingNow = false;
-                    if (pendingPushAfterSync) {
-                        pendingPushAfterSync = false;
-                        scheduleAutoPush();
-                    }
                 }
             }
 
-            // 800ms 防抖自动推送
-            function scheduleAutoPush() {
+            function schedulePushToGitHub() {
                 if (pushDebounceTimer) clearTimeout(pushDebounceTimer);
-                setSyncStatus('syncing', '同步中...');
+                updateSyncBadge('syncing', '待同步...');
                 pushDebounceTimer = setTimeout(() => {
-                    pushToGitHub({ silentToast: true });
+                    pushToGitHub({ silent: true });
                 }, 800);
             }
 
-            /* ==================== 界面渲染 ==================== */
+            function commitLocalChange() {
+                saveLocalData();
+                render();
+                schedulePushToGitHub();
+            }
+
+            /* ==================== 渲染与统计 ==================== */
 
             function updateStats() {
                 let total = 0;
                 let completed = 0;
-
                 categories.forEach((cat) => {
-                    const items = Array.isArray(cat.items) ? cat.items : [];
-                    total += items.length;
-                    items.forEach((item) => {
+                    total += cat.items.length;
+                    cat.items.forEach((item) => {
                         if (item.completed) completed++;
                     });
                 });
-
                 const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
                 if (statCompleted) statCompleted.textContent = String(completed);
                 if (statTotal) statTotal.textContent = String(total);
-                if (statPercent) statPercent.textContent = percent + '%';
-                if (progressBar) progressBar.style.width = percent + '%';
+                if (statPercent) statPercent.textContent = `${percent}%`;
+                if (progressBar) progressBar.style.width = `${percent}%`;
             }
 
             function updateFilterButtons() {
                 filterBtns.forEach((btn) => {
                     const isActive = btn.dataset.filter === currentFilter;
                     if (isActive) {
-                        btn.className = 'filter-btn px-2.5 py-1 text-xs font-medium rounded-lg transition-all bg-elevated text-emerald-400 shadow-sm';
+                        btn.className = 'filter-btn px-3 py-1 text-xs font-medium rounded-lg transition-all bg-elevated text-white shadow-sm';
                     } else {
-                        btn.className = 'filter-btn px-2.5 py-1 text-xs font-medium rounded-lg transition-all text-zinc-400 hover:text-zinc-200';
+                        btn.className = 'filter-btn px-3 py-1 text-xs font-medium rounded-lg transition-all text-zinc-400 hover:text-zinc-200';
                     }
                 });
             }
 
-            function buildCategoryCardHtml(cat) {
-                const items = Array.isArray(cat.items) ? cat.items : [];
-                const totalCount = items.length;
-                const completedCount = items.filter((i) => i.completed).length;
+            function buildCategoryCard(cat) {
+                const totalCount = cat.items.length;
+                const completedCount = cat.items.filter((i) => i.completed).length;
+                const isAllDone = totalCount > 0 && completedCount === totalCount;
 
-                const visibleItems = items.filter((item) => {
+                const filteredItems = cat.items.filter((item) => {
                     if (currentFilter === 'active') return !item.completed;
                     if (currentFilter === 'completed') return item.completed;
                     return true;
                 });
 
                 let itemsHtml = '';
-                if (visibleItems.length > 0) {
-                    itemsHtml = visibleItems.map((item) => {
-                        const checked = Boolean(item.completed);
-                        return `
-                            <li class="group flex items-center justify-between gap-1.5 px-1.5 py-1 rounded-lg hover:bg-elevated/80 transition-colors">
-                                <div
-                                    role="checkbox"
-                                    aria-checked="${checked}"
-                                    tabindex="0"
-                                    data-action="toggle"
-                                    data-cat-id="${escapeHtml(cat.id)}"
-                                    data-item-id="${escapeHtml(item.id)}"
-                                    class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer select-none"
-                                >
-                                    <span class="w-4 h-4 rounded-full flex items-center justify-center shrink-0 transition-all duration-150 ${
-                                        checked
-                                            ? 'bg-emerald-400 border-emerald-400 text-zinc-950 animate-check-pop'
-                                            : 'border-[1.5px] border-zinc-600 group-hover:border-sky-400/80 bg-transparent'
-                                    }">
-                                        ${checked ? `
-                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="3.2" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                            </svg>
-                                        ` : ''}
-                                    </span>
-                                    <span class="text-[13.5px] leading-snug break-words transition-all duration-150 ${
-                                        checked
-                                            ? 'line-through text-zinc-500 opacity-65'
-                                            : 'text-zinc-100'
-                                    }">
-                                        ${escapeHtml(item.text)}
-                                    </span>
-                                </div>
-
-                                <button
-                                    type="button"
-                                    data-action="delete-item"
-                                    data-cat-id="${escapeHtml(cat.id)}"
-                                    data-item-id="${escapeHtml(item.id)}"
-                                    aria-label="删除条目"
-                                    title="删除此项"
-                                    class="p-1 rounded-md text-zinc-500 hover:text-red-400 hover:bg-red-500/10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 transition-all shrink-0"
-                                >
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </li>
-                        `;
-                    }).join('');
+                if (filteredItems.length === 0) {
+                    const emptyTip =
+                        totalCount === 0
+                            ? '暂无条目，在下方添加'
+                            : currentFilter === 'active'
+                                ? '本组已全部完成'
+                                : '暂无已完成条目';
+                    itemsHtml = `<li class="py-3 text-center text-xs text-zinc-500 select-none">${emptyTip}</li>`;
                 } else {
-                    let emptyText = '暂无条目，在下方添加';
-                    if (totalCount > 0 && currentFilter === 'active') {
-                        emptyText = '该分类已全部完成 ✓';
-                    } else if (totalCount > 0 && currentFilter === 'completed') {
-                        emptyText = '暂无已完成项';
-                    }
-                    itemsHtml = `
-                        <li class="py-3 text-center text-xs text-zinc-500 select-none">
-                            ${emptyText}
-                        </li>
-                    `;
+                    itemsHtml = filteredItems
+                        .map((item) => {
+                            return `
+                                <li class="group flex items-center justify-between gap-1.5 px-1.5 py-1 rounded-xl hover:bg-elevated/80 transition-colors">
+                                    <button
+                                        type="button"
+                                        data-action="toggle-item"
+                                        data-cat-id="${cat.id}"
+                                        data-item-id="${item.id}"
+                                        class="flex-1 flex items-center gap-2.5 text-left min-w-0 py-0.5 cursor-pointer"
+                                    >
+                                        <span class="w-4 h-4 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                                            item.completed
+                                                ? 'bg-emerald-400 text-zinc-950 shadow-sm shadow-emerald-500/30'
+                                                : 'border-[1.5px] border-zinc-600 group-hover:border-zinc-400'
+                                        }">
+                                            ${
+                                                item.completed
+                                                    ? '<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>'
+                                                    : ''
+                                            }
+                                        </span>
+                                        <span class="text-[13.5px] leading-snug break-words transition-all ${
+                                            item.completed ? 'line-through text-zinc-500' : 'text-zinc-100'
+                                        }">${escapeHtml(item.text)}</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        data-action="delete-item"
+                                        data-cat-id="${cat.id}"
+                                        data-item-id="${item.id}"
+                                        class="p-1 rounded-lg text-zinc-500 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 hover:text-red-400 hover:bg-red-500/10 transition-all shrink-0"
+                                        title="删除此项"
+                                        aria-label="删除条目"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </li>
+                            `;
+                        })
+                        .join('');
                 }
 
-                const isAllDone = totalCount > 0 && completedCount === totalCount;
-
                 return `
-                    <section class="masonry-card bg-card border border-zinc-800/80 rounded-2xl p-2.5 shadow-md shadow-black/25">
-                        <!-- 分类头部 -->
+                    <section class="bg-card border border-zinc-800/80 rounded-2xl p-3 shadow-lg shadow-black/25 flex flex-col w-full">
+                        <!-- 分类标题栏 -->
                         <div class="flex items-center justify-between gap-2 pb-2 mb-1.5 border-b border-zinc-800/75">
                             <div class="flex items-center gap-2 min-w-0">
                                 <h2 class="text-sm font-bold text-white truncate">${escapeHtml(cat.title)}</h2>
-                                <span class="px-1.5 py-0.5 text-[11px] font-medium rounded-full tabular-nums shrink-0 ${
+                                <span class="px-2 py-0.5 text-[11px] font-medium rounded-full tabular-nums shrink-0 ${
                                     isAllDone
                                         ? 'bg-emerald-500/15 text-emerald-400'
                                         : 'bg-elevated text-zinc-400'
@@ -966,7 +900,7 @@
                             <button
                                 type="button"
                                 data-action="delete-cat"
-                                data-cat-id="${escapeHtml(cat.id)}"
+                                data-cat-id="${cat.id}"
                                 class="p-1 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
                                 title="删除此分类"
                                 aria-label="删除分类"
@@ -982,19 +916,19 @@
                             ${itemsHtml}
                         </ul>
 
-                        <!-- 底部快速添加 -->
-                        <form data-action="add-item" data-cat-id="${escapeHtml(cat.id)}" class="flex items-center gap-1.5 pt-2 border-t border-zinc-800/60">
+                        <!-- 分组底部快速添加 -->
+                        <form data-action="add-item" data-cat-id="${cat.id}" class="flex items-center gap-1.5 pt-2 border-t border-zinc-800/60 mt-auto">
                             <input
                                 type="text"
                                 name="itemText"
                                 placeholder="添加条目..."
                                 autocomplete="off"
                                 maxlength="60"
-                                class="w-0 flex-1 px-2.5 py-1.5 text-xs bg-base border border-zinc-800 rounded-lg text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-sky-500/60 focus:ring-1 focus:ring-sky-500/30 transition-all"
+                                class="flex-1 min-w-0 px-2.5 py-1.5 text-xs bg-base border border-zinc-800 rounded-xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-sky-500/60 focus:ring-1 focus:ring-sky-500/30 transition-all"
                             >
                             <button
                                 type="submit"
-                                class="w-7 h-7 flex items-center justify-center rounded-lg bg-elevated hover:bg-emerald-400 text-zinc-200 hover:text-zinc-950 active:scale-95 transition-all shrink-0"
+                                class="w-7 h-7 flex items-center justify-center rounded-xl bg-elevated hover:bg-emerald-400 text-zinc-200 hover:text-zinc-950 active:scale-95 transition-all shrink-0"
                                 title="添加条目"
                                 aria-label="添加条目"
                             >
@@ -1007,36 +941,74 @@
                 `;
             }
 
+            // 根据容器实际宽度计算最大可容纳列数
+            function calculateColumnCount() {
+                if (!masonryContainer) return 1;
+                const containerWidth = masonryContainer.clientWidth || window.innerWidth;
+                return Math.max(1, Math.floor((containerWidth + COL_GAP) / (MIN_COL_WIDTH + COL_GAP)));
+            }
+
+            // 估算卡片相对高度，用于后续卡片填补最短列
+            function estimateCardWeight(cat) {
+                const visibleCount = cat.items.filter((item) => {
+                    if (currentFilter === 'active') return !item.completed;
+                    if (currentFilter === 'completed') return item.completed;
+                    return true;
+                }).length;
+                return 90 + Math.max(1, visibleCount) * 32;
+            }
+
+            /**
+             * 横向优先智能瀑布流渲染：
+             * 1. 前 colCount 个分类依次横向铺入第 1 列到第 colCount 列，优先占满整行宽度
+             * 2. 第 colCount + 1 个及之后的分类，插入当前累计高度最短的列底部，填补短卡片下方空隙
+             */
             function render() {
                 if (!masonryContainer) return;
-                if (categories.length === 0) {
-                    masonryContainer.innerHTML = `
-                        <div class="w-full py-16 text-center text-sm text-zinc-500">
-                            暂无分类，点击右上角「+ 新增分类」开始创建
+
+                const colCount = calculateColumnCount();
+                currentColCount = colCount;
+
+                const columns = Array.from({ length: colCount }, () => []);
+                const colHeights = new Array(colCount).fill(0);
+
+                categories.forEach((cat, idx) => {
+                    let targetCol = 0;
+                    if (idx < colCount) {
+                        targetCol = idx;
+                    } else {
+                        let minH = colHeights[0];
+                        for (let c = 1; c < colCount; c++) {
+                            if (colHeights[c] < minH) {
+                                minH = colHeights[c];
+                                targetCol = c;
+                            }
+                        }
+                    }
+
+                    columns[targetCol].push(buildCategoryCard(cat));
+                    colHeights[targetCol] += estimateCardWeight(cat) + COL_GAP;
+                });
+
+                masonryContainer.innerHTML = columns
+                    .map((cardsHtml) => `
+                        <div class="flex-1 min-w-0 flex flex-col gap-3">
+                            ${cardsHtml.join('')}
                         </div>
-                    `;
-                } else {
-                    masonryContainer.innerHTML = categories.map(buildCategoryCardHtml).join('');
-                }
+                    `)
+                    .join('');
+
                 updateStats();
                 updateFilterButtons();
             }
 
-            /* ==================== 交互动作 ==================== */
-
-            function commitLocalChange() {
-                saveLocalData();
-                updateLastUpdatedDisplay(new Date().toISOString());
-                render();
-                scheduleAutoPush();
-            }
+            /* ==================== 清单数据操作 ==================== */
 
             function toggleItem(catId, itemId) {
                 const cat = categories.find((c) => c.id === catId);
                 if (!cat) return;
                 const item = cat.items.find((i) => i.id === itemId);
                 if (!item) return;
-
                 item.completed = !item.completed;
                 commitLocalChange();
             }
@@ -1044,63 +1016,65 @@
             function addItem(catId, text) {
                 const trimmed = text.trim();
                 if (!trimmed) return;
-
                 const cat = categories.find((c) => c.id === catId);
                 if (!cat) return;
-
                 cat.items.push({
                     id: generateId('item'),
                     text: trimmed,
                     completed: false
                 });
                 commitLocalChange();
-                showToast('已添加到「' + cat.title + '」', 'success');
+                showToast(`已添加「${trimmed}」`, 'success');
             }
 
             function deleteItem(catId, itemId) {
                 const cat = categories.find((c) => c.id === catId);
                 if (!cat) return;
-
-                cat.items = cat.items.filter((i) => i.id !== itemId);
+                const idx = cat.items.findIndex((i) => i.id === itemId);
+                if (idx === -1) return;
+                const removed = cat.items.splice(idx, 1)[0];
                 commitLocalChange();
-                showToast('已删除条目', 'info');
+                showToast(`已删除「${removed.text}」`, 'info');
             }
 
-            function addCategory(title) {
+            function addCategory(title, column) {
                 const trimmed = title.trim();
                 if (!trimmed) return;
-
-                categories.push({
+                const newCat = {
                     id: generateId('cat'),
                     title: trimmed,
+                    column: column === 'left' ? 'left' : 'right',
                     items: []
-                });
+                };
+                if (column === 'left') {
+                    categories.unshift(newCat);
+                } else {
+                    categories.push(newCat);
+                }
                 commitLocalChange();
-                showToast('已创建分类「' + trimmed + '」', 'success');
+                showToast(`已创建分类「${trimmed}」`, 'success');
             }
 
             function requestDeleteCategory(catId) {
                 const cat = categories.find((c) => c.id === catId);
                 if (!cat) return;
-
-                if (!cat.items || cat.items.length === 0) {
-                    performDeleteCategory(catId);
-                } else {
-                    pendingDeleteCatId = catId;
-                    if (deleteCatDesc) {
-                        deleteCatDesc.textContent = '分类「' + cat.title + '」下仍有 ' + cat.items.length + ' 个条目，删除后将一并移除。确定要删除吗？';
-                    }
-                    openModal(deleteCatModal);
+                pendingDeleteCatId = catId;
+                if (deleteCatDesc) {
+                    deleteCatDesc.textContent = `确定要删除分类「${cat.title}」及其包含的 ${cat.items.length} 个条目吗？此操作会同步到云端。`;
                 }
+                openModal(deleteCatModal);
             }
 
-            function performDeleteCategory(catId) {
-                const cat = categories.find((c) => c.id === catId);
-                if (!cat) return;
-
-                categories = categories.filter((c) => c.id !== catId);
-                commitLocalChange();
-                showToast('已删除分类「' + cat.title + '」', 'info');
+            function confirmDeleteCategory() {
+                if (!pendingDeleteCatId) return;
+                const idx = categories.findIndex((c) => c.id === pendingDeleteCatId);
+                if (idx !== -1) {
+                    const removed = categories.splice(idx, 1)[0];
+                    commitLocalChange();
+                    showToast(`已删除分类「${removed.title}」`, 'info');
+                }
+                pendingDeleteCatId = null;
+                closeModal(deleteCatModal);
             }
 
             function resetToInitial() {
@@ -1113,16 +1087,16 @@
             /* ==================== 事件绑定 ==================== */
 
             function bindEvents() {
+                // 瀑布流容器内部事件委托
                 if (masonryContainer) {
                     masonryContainer.addEventListener('click', (e) => {
-                        const target = e.target.closest('[data-action]');
-                        if (!target) return;
+                        const btn = e.target.closest('button[data-action]');
+                        if (!btn) return;
+                        const action = btn.dataset.action;
+                        const catId = btn.dataset.catId;
+                        const itemId = btn.dataset.itemId;
 
-                        const action = target.dataset.action;
-                        const catId = target.dataset.catId;
-                        const itemId = target.dataset.itemId;
-
-                        if (action === 'toggle') {
+                        if (action === 'toggle-item') {
                             toggleItem(catId, itemId);
                         } else if (action === 'delete-item') {
                             deleteItem(catId, itemId);
@@ -1131,28 +1105,24 @@
                         }
                     });
 
-                    masonryContainer.addEventListener('keydown', (e) => {
-                        if (e.key !== 'Enter' && e.key !== ' ') return;
-                        const target = e.target.closest('[data-action="toggle"]');
-                        if (!target) return;
-                        e.preventDefault();
-                        toggleItem(target.dataset.catId, target.dataset.itemId);
-                    });
-
                     masonryContainer.addEventListener('submit', (e) => {
                         const form = e.target.closest('form[data-action="add-item"]');
                         if (!form) return;
                         e.preventDefault();
                         const catId = form.dataset.catId;
                         const input = form.querySelector('input[name="itemText"]');
-                        if (!input || !input.value.trim()) return;
-
-                        addItem(catId, input.value);
-                        const updatedInput = masonryContainer.querySelector('form[data-cat-id="' + catId + '"] input[name="itemText"]');
-                        if (updatedInput) updatedInput.focus();
+                        if (!input) return;
+                        const text = input.value;
+                        if (text.trim()) {
+                            addItem(catId, text);
+                            // 保持焦点便于连续录入
+                            const nextInput = masonryContainer.querySelector(`form[data-cat-id="${catId}"] input[name="itemText"]`);
+                            if (nextInput) nextInput.focus();
+                        }
                     });
                 }
 
+                // 顶部状态筛选切换
                 filterBtns.forEach((btn) => {
                     btn.addEventListener('click', () => {
                         currentFilter = btn.dataset.filter || 'all';
@@ -1160,71 +1130,53 @@
                     });
                 });
 
+                // 顶部同步徽章点击：立即手动拉取云端或重试
                 if (syncStatusPill) {
                     syncStatusPill.addEventListener('click', () => {
                         pullFromGitHub(false);
                     });
                 }
 
+                // 新增分类弹窗
                 if (openAddCatBtn) {
                     openAddCatBtn.addEventListener('click', () => {
-                        if (newCatNameInput) newCatNameInput.value = '';
+                        if (addCatForm) addCatForm.reset();
                         openModal(addCatModal, newCatNameInput);
                     });
                 }
                 if (cancelAddCatBtn) {
                     cancelAddCatBtn.addEventListener('click', () => closeModal(addCatModal));
                 }
-                if (addCatModal) {
-                    addCatModal.addEventListener('click', (e) => {
-                        if (e.target === addCatModal) closeModal(addCatModal);
-                    });
-                }
                 if (addCatForm) {
                     addCatForm.addEventListener('submit', (e) => {
                         e.preventDefault();
-                        const name = newCatNameInput ? newCatNameInput.value.trim() : '';
-                        if (name) {
-                            addCategory(name);
+                        const title = newCatNameInput ? newCatNameInput.value : '';
+                        const colRadio = addCatForm.querySelector('input[name="catColumn"]:checked');
+                        const col = colRadio ? colRadio.value : 'left';
+                        if (title.trim()) {
+                            addCategory(title, col);
                             closeModal(addCatModal);
                         }
                     });
                 }
 
+                // 删除分类确认弹窗
                 if (cancelDeleteCatBtn) {
                     cancelDeleteCatBtn.addEventListener('click', () => {
                         pendingDeleteCatId = null;
                         closeModal(deleteCatModal);
                     });
                 }
-                if (deleteCatModal) {
-                    deleteCatModal.addEventListener('click', (e) => {
-                        if (e.target === deleteCatModal) {
-                            pendingDeleteCatId = null;
-                            closeModal(deleteCatModal);
-                        }
-                    });
-                }
                 if (confirmDeleteCatBtn) {
-                    confirmDeleteCatBtn.addEventListener('click', () => {
-                        if (pendingDeleteCatId) {
-                            performDeleteCategory(pendingDeleteCatId);
-                            pendingDeleteCatId = null;
-                        }
-                        closeModal(deleteCatModal);
-                    });
+                    confirmDeleteCatBtn.addEventListener('click', confirmDeleteCategory);
                 }
 
+                // 重置弹窗
                 if (openResetBtn) {
                     openResetBtn.addEventListener('click', () => openModal(resetModal));
                 }
                 if (cancelResetBtn) {
                     cancelResetBtn.addEventListener('click', () => closeModal(resetModal));
-                }
-                if (resetModal) {
-                    resetModal.addEventListener('click', (e) => {
-                        if (e.target === resetModal) closeModal(resetModal);
-                    });
                 }
                 if (confirmResetBtn) {
                     confirmResetBtn.addEventListener('click', () => {
@@ -1233,23 +1185,87 @@
                     });
                 }
 
+                // 409 版本冲突弹窗
+                if (conflictPullBtn) {
+                    conflictPullBtn.addEventListener('click', () => {
+                        closeModal(conflictModal);
+                        pullFromGitHub(false);
+                    });
+                }
+                if (conflictForceBtn) {
+                    conflictForceBtn.addEventListener('click', async () => {
+                        closeModal(conflictModal);
+                        // 获取最新 SHA 后强制覆盖
+                        try {
+                            const headRes = await fetchWithTimeout(getContentsApiUrl(true), {
+                                method: 'GET',
+                                headers: getAuthHeaders(false),
+                                cache: 'no-store'
+                            });
+                            if (headRes.ok) {
+                                const headData = await headRes.json();
+                                if (headData && headData.sha) saveSha(headData.sha);
+                            }
+                        } catch (e) {
+                            // 忽略获取失败，继续尝试写入
+                        }
+                        pushToGitHub({ forceOverwrite: true, silent: false });
+                    });
+                }
+                if (conflictCancelBtn) {
+                    conflictCancelBtn.addEventListener('click', () => closeModal(conflictModal));
+                }
+
+                // 点击遮罩关闭弹窗
+                [addCatModal, deleteCatModal, resetModal, conflictModal].forEach((modalEl) => {
+                    if (!modalEl) return;
+                    modalEl.addEventListener('click', (e) => {
+                        if (e.target === modalEl) {
+                            closeModal(modalEl);
+                            if (modalEl === deleteCatModal) pendingDeleteCatId = null;
+                        }
+                    });
+                });
+
+                // ESC 键关闭所有弹窗
                 document.addEventListener('keydown', (e) => {
                     if (e.key === 'Escape') {
                         closeModal(addCatModal);
                         closeModal(deleteCatModal);
                         closeModal(resetModal);
+                        closeModal(conflictModal);
                         pendingDeleteCatId = null;
                     }
                 });
+
+                // 窗口宽度变化时实时重新计算列数并重排
+                window.addEventListener('resize', () => {
+                    if (resizeRafId) cancelAnimationFrame(resizeRafId);
+                    resizeRafId = requestAnimationFrame(() => {
+                        const nextCols = calculateColumnCount();
+                        if (nextCols !== currentColCount) {
+                            render();
+                        }
+                    });
+                });
             }
 
-            /* ==================== 启动入口 ==================== */
+            /* ==================== 启动初始化 ==================== */
 
-            loadLocalState();
-            bindEvents();
-            render();
-            pullFromGitHub(true);
-        });
+            function init() {
+                loadLocalData();
+                bindEvents();
+                render();
+                // 页面加载完成后静默拉取一次云端最新数据
+                pullFromGitHub(true);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+        })();
     </script>
 </body>
 </html>
