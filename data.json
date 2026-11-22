@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-22T11:18:02.905Z",
+  "updatedAt": "2026-11-22T11:18:05.347Z",
   "categories": [
     {
       "id": "cat_food",
@@ -128,12 +128,12 @@
         {
           "id": "item_22",
           "text": "晨光黑色 5",
-          "completed": false
+          "completed": true
         },
         {
           "id": "item_23",
           "text": "橡皮 1",
-          "completed": false
+          "completed": true
         },
         {
           "id": "item_24",
