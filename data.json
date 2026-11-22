@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-22T04:49:42.199Z",
+  "updatedAt": "2026-11-22T04:50:11.810Z",
   "categories": [
     {
       "id": "cat_food",
@@ -28,7 +28,7 @@
         },
         {
           "id": "item_5",
-          "text": "山姆苹果干",
+          "text": "山姆苹果干（妈妈）",
           "completed": false
         },
         {
