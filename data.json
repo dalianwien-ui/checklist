@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-22T11:28:00.663Z",
+  "updatedAt": "2026-11-22T11:28:06.024Z",
   "categories": [
     {
       "id": "cat_food",
@@ -192,7 +192,7 @@
         {
           "id": "item_32",
           "text": "手机壳",
-          "completed": false
+          "completed": true
         }
       ]
     }
