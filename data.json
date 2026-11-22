@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-22T11:18:05.347Z",
+  "updatedAt": "2026-11-22T11:18:09.368Z",
   "categories": [
     {
       "id": "cat_food",
@@ -150,7 +150,7 @@
         {
           "id": "item_25",
           "text": "b5黄色纸",
-          "completed": false
+          "completed": true
         },
         {
           "id": "item_26",
