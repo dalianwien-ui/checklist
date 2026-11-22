@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-22T11:07:14.643Z",
+  "updatedAt": "2026-11-22T11:07:17.551Z",
   "categories": [
     {
       "id": "cat_food",
@@ -106,7 +106,7 @@
         {
           "id": "item_19",
           "text": "透明胶带",
-          "completed": false
+          "completed": true
         }
       ]
     },
