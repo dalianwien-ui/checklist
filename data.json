@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-22T04:04:42.298Z",
+  "updatedAt": "2026-11-22T04:49:42.199Z",
   "categories": [
     {
       "id": "cat_food",
@@ -23,7 +23,7 @@
         },
         {
           "id": "item_4",
-          "text": "山姆黑芝麻糊",
+          "text": "山姆黑芝麻糊（妈妈）",
           "completed": false
         },
         {
