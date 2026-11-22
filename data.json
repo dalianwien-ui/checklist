@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-22T04:04:25.075Z",
+  "updatedAt": "2026-11-22T04:04:27.350Z",
   "categories": [
     {
       "id": "cat_food",
@@ -9,7 +9,7 @@
         {
           "id": "item_1",
           "text": "米线酱",
-          "completed": false
+          "completed": true
         },
         {
           "id": "item_2",
