@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-22T04:53:14.943Z",
+  "updatedAt": "2026-11-22T11:07:14.643Z",
   "categories": [
     {
       "id": "cat_food",
@@ -91,17 +91,17 @@
         {
           "id": "item_16",
           "text": "装饰电脑贴纸",
-          "completed": false
+          "completed": true
         },
         {
           "id": "item_17",
           "text": "活页纸的孔孔拯救贴纸",
-          "completed": false
+          "completed": true
         },
         {
           "id": "item_18",
           "text": "少许姓名贴",
-          "completed": false
+          "completed": true
         },
         {
           "id": "item_19",
