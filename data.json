@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-22T13:29:33.753Z",
+  "updatedAt": "2026-11-22T13:29:38.597Z",
   "categories": [
     {
       "id": "cat_food",
@@ -79,7 +79,7 @@
         {
           "id": "item_mwrv78gu_95el",
           "text": "桃胶银耳  https://mobile.yangkeduo.com/goods2.html?ps=T0TdLk27WA",
-          "completed": true
+          "completed": false
         },
         {
           "id": "item_mwrv8j27_o2ow",
