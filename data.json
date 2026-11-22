@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-22T11:18:09.368Z",
+  "updatedAt": "2026-11-22T11:28:00.663Z",
   "categories": [
     {
       "id": "cat_food",
@@ -172,7 +172,7 @@
         {
           "id": "item_28",
           "text": "小梳子",
-          "completed": false
+          "completed": true
         },
         {
           "id": "item_29",
